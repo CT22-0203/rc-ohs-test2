@@ -1,7 +1,8 @@
 package com.rocs.rc.ohs.data.dao.login.impl;
 
-import static org.junit.jupiter.api.Assertions.*;
-
+/**
+ * Tests the {@link LoginDaoImpl} class.
+ */
 class LoginDaoImplTest {
 
 }
