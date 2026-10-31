@@ -4,7 +4,7 @@
             xsi:noNamespaceSchemaLocation="http://ant.apache.org/ivy/schemas/ivy.xsd">
     <info
             organisation="com.rocs"
-            module="rc-ohs-test2"
+            module="rc-ohs"
             revision="1.0"
             status="integration">
     </info>
@@ -13,6 +13,7 @@
         <conf name="compile" description="Required to compile application"/>
         <conf name="runtime" description="Additional run-time dependencies" extends="compile"/>
         <conf name="test"    description="Required for test only" extends="runtime"/>
+        <conf name="pmd"     description="PMD and CPD tools only"/>
     </configurations>
 
     <dependencies>
@@ -27,6 +28,9 @@
         <dependency org="org.mockito" name="mockito-core" rev="5.15.2"/>
         <dependency org="org.mockito" name="mockito-junit-jupiter" rev="5.15.2"/>
         <dependency org="net.bytebuddy" name="byte-buddy-dep" rev="1.17.0"/>
+        <!--Static analysis (PMD and CPD)-->
+        <dependency org="net.sourceforge.pmd" name="pmd-ant" rev="7.14.0" conf="pmd->default"/>
+        <dependency org="net.sourceforge.pmd" name="pmd-java" rev="7.14.0" conf="pmd->default"/>
 
     </dependencies>
 </ivy-module>
