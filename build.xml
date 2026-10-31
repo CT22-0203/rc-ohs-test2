@@ -14,6 +14,8 @@
     <property name="test.src.dir" location="src/test/java"/>
     <property name="test.classes.dir" location="${build.dir}/test-classes"/>
     <property name="test.reports.dir"  location="${build.dir}/test-reports"/>
+    <property name="lib.dir" location="${build.dir}/lib"/>
+    <property name="reports.dir" location="${build.dir}/reports"/>
 
     <target name="clean" >
         <echo>Cleaning temporary directories...</echo>
@@ -28,6 +30,7 @@
         <ivy:cachepath pathid="compile.path" conf="compile"/>
         <ivy:cachepath pathid="runtime.path" conf="runtime"/>
         <ivy:cachepath pathid="test.path"    conf="test"/>
+        <ivy:cachepath pathid="pmd.path"     conf="pmd"/>
         <mkdir dir="${classes.dir}"/>
         <mkdir dir="${dist.dir}"/>
         <mkdir dir="${test.classes.dir}"/>
@@ -49,26 +52,64 @@
         </javac>
     </target>
 
+    <target name="copy-dependencies" depends="init"
+            description="Copies all dependency jars to build/lib">
+        <echo>Copying dependencies...</echo>
+        <mkdir dir="${lib.dir}"/>
+        <ivy:retrieve pattern="${lib.dir}/[artifact]-[revision](-[m:classifier]).[ext]"
+                      conf="compile,runtime,test"/>
+    </target>
+
+    <!-- Runs the PMD Copy-Paste Detector (CPD) on the main source code -->
+    <target name="cpd" depends="init" description="Runs the Copy-Paste Detector">
+        <echo>Running CPD...</echo>
+        <mkdir dir="${reports.dir}"/>
+        <taskdef name="cpd" classname="net.sourceforge.pmd.ant.CPDTask"
+                 classpathref="pmd.path"/>
+        <cpd minimumTokenCount="100" language="java" format="xml"
+             outputFile="${reports.dir}/cpd-report.xml">
+            <fileset dir="${src.dir}">
+                <include name="**/*.java"/>
+            </fileset>
+        </cpd>
+        <echo>CPD report: ${reports.dir}/cpd-report.xml</echo>
+    </target>
+
+    <!-- Runs PMD on the main source code using the quickstart ruleset -->
+    <target name="pmd" depends="init" description="Runs PMD">
+        <echo>Running PMD...</echo>
+        <mkdir dir="${reports.dir}"/>
+        <taskdef name="pmd" classname="net.sourceforge.pmd.ant.PMDTask"
+                 classpathref="pmd.path"/>
+        <pmd rulesetfiles="rulesets/java/quickstart.xml">
+            <formatter type="xml" toFile="${reports.dir}/pmd-report.xml"/>
+            <fileset dir="${src.dir}">
+                <include name="**/*.java"/>
+            </fileset>
+        </pmd>
+        <echo>PMD report: ${reports.dir}/pmd-report.xml</echo>
+    </target>
+
     <path id="junit.libs">
         <fileset dir="${ant.home}/lib/junit"/>
     </path>
 
-        <target name="test" depends="compile-tests">
-            <junitlauncher printsummary="true" haltonfailure="yes">
-                <classpath>
-                    <path refid="test.path"/>
-                    <path refid="junit.libs"/>
-                    <pathelement path="${classanes.dir}"/>
-                    <pathelement path="${test.classes.dir}"/>
-                    <pathelement path="${test.reports.dir}"/>
-                </classpath>
-                <testclasses outputdir="${test.reports.dir}">
-                    <fileset dir="${test.classes.dir}"/>
-                    <listener type="legacy-brief" sendSysOut="true"/>
-                    <listener type="legacy-xml" sendSysErr="true" sendSysOut="true"/>
-                </testclasses>
-            </junitlauncher>
-        </target>
+    <target name="test" depends="compile-tests">
+        <junitlauncher printsummary="true" haltonfailure="yes">
+            <classpath>
+                <path refid="test.path"/>
+                <path refid="junit.libs"/>
+                <pathelement path="${classes.dir}"/>
+                <pathelement path="${test.classes.dir}"/>
+                <pathelement path="${test.reports.dir}"/>
+            </classpath>
+            <testclasses outputdir="${test.reports.dir}">
+                <fileset dir="${test.classes.dir}"/>
+                <listener type="legacy-brief" sendSysOut="true"/>
+                <listener type="legacy-xml" sendSysErr="true" sendSysOut="true"/>
+            </testclasses>
+        </junitlauncher>
+    </target>
 
     <target name="build" depends="compile-tests" description="Builds the project">
         <echo>Building...</echo>
