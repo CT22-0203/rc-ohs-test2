@@ -1,6 +1,5 @@
 package com.rocs.rc.ohs.data.dao.login.impl;
 
-
 import com.rocs.rc.ohs.app.model.login.Login;
 import com.rocs.rc.ohs.data.connection.ConnectionHelper;
 import com.rocs.rc.ohs.data.dao.login.LoginDao;
@@ -27,24 +26,20 @@ public class LoginDaoImpl implements LoginDao {
     public Login login(String username) {
 
         Login login = null;
-        try (Connection conn = ConnectionHelper.getConnection()) {
-            PreparedStatement stmt = conn.prepareStatement(
-                    "select * from login where username = ?");
+        try (Connection conn = ConnectionHelper.getConnection();
+             PreparedStatement stmt = conn.prepareStatement(
+                     "select * from login where username = ?")) {
             stmt.setString(1, username);
 
-            ResultSet rs = stmt.executeQuery();
-            if (rs.next()) {
-                login = new Login();
-                login.setUsername(rs.getString("username"));
-                login.setPassword(rs.getString("password"));
+            try (ResultSet rs = stmt.executeQuery()) {
+                if (rs.next()) {
+                    login = new Login();
+                    login.setUsername(rs.getString("username"));
+                    login.setPassword(rs.getString("password"));
 
-                Long id = rs.getLong("id");
-                PreparedStatement stmt2 = conn.prepareStatement(
-                        "update login set last_login_date = ? where id = ?");
-                stmt2.setDate(1, new Date(System.currentTimeMillis()));
-                stmt2.setLong(2, id);
-
-                stmt2.executeUpdate();
+                    Long id = rs.getLong("id");
+                    updateLastLoginDate(conn, id);
+                }
             }
 
         } catch (SQLException e) {
@@ -53,5 +48,22 @@ public class LoginDaoImpl implements LoginDao {
                             + e.getMessage());
         }
         return login;
+    }
+
+    /**
+     * Updates the last login date of the account with the given ID.
+     *
+     * @param conn The open database connection.
+     * @param id The ID of the account to update.
+     * @throws SQLException If the update fails.
+     */
+    private void updateLastLoginDate(Connection conn, Long id)
+            throws SQLException {
+        try (PreparedStatement stmt = conn.prepareStatement(
+                "update login set last_login_date = ? where id = ?")) {
+            stmt.setDate(1, new Date(System.currentTimeMillis()));
+            stmt.setLong(2, id);
+            stmt.executeUpdate();
+        }
     }
 }
