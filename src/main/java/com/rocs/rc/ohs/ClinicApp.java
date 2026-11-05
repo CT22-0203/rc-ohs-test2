@@ -6,8 +6,22 @@ import com.rocs.rc.ohs.app.model.login.Login;
 
 import java.util.Scanner;
 
-public class ClinicApp {
+/**
+ * The main entry point of the clinic application.
+ */
+public final class ClinicApp {
 
+    /**
+     * Prevents instantiation of this class.
+     */
+    private ClinicApp() {
+    }
+
+    /**
+     * Runs the clinic application and logs in the user.
+     *
+     * @param args The command line arguments.
+     */
     public static void main(String[] args) {
 
         Scanner sc = new Scanner(System.in);
@@ -15,7 +29,7 @@ public class ClinicApp {
         System.out.println("Welcome to Clinic IS");
         System.out.print("USERNAME: ");
         String username = sc.nextLine();
-        System.out.print("PASSWORD: " );
+        System.out.print("PASSWORD: ");
         String password = sc.nextLine();
 
         if (username.isEmpty()) {
