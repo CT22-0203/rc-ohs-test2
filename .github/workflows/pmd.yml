@@ -7,11 +7,11 @@ name: pmd
 
 on:
   push:
-    branches: [ "main" ]
+    branches: [ "master" ]
   pull_request:
-    branches: [ "main" ]
+    branches: [ "master" ]
   schedule:
-    - cron: '32 2 * * 5'
+    - cron: '35 0 * * 2'
 
 permissions:
   contents: read
@@ -32,7 +32,7 @@ jobs:
           distribution: 'temurin'
       - name: Run PMD
         id: pmd
-        uses: pmd/pmd-github-action@main
+        uses: pmd/pmd-github-action@v2
         with:
           rulesets: 'rulesets/java/quickstart.xml'
           sourcePath: 'src/main/java'
