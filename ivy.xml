@@ -35,7 +35,7 @@
         <dependency org="net.sourceforge.pmd" name="pmd-java" rev="7.14.0" conf="pmd->default"/>
         <dependency org="com.puppycrawl.tools" name="checkstyle" rev="10.17.0" conf="checkstyle->default"/>
         <dependency org="com.github.spotbugs" name="spotbugs" rev="4.8.6"/>
-        <dependency org="com.h3xstream.findsecbugs" name="findsecbugs-plugin" rev="1.14.0"/>
+        <dependency org="com.github.spotbugs" name="spotbugs-ant" rev="4.8.6" conf="spotbugs->default"/>
 
     </dependencies>
 </ivy-module>
