@@ -3,112 +3,145 @@ package com.rocs.rc.ohs.app.model.login;
 import java.util.Date;
 
 /**
- * Represents a login account in the system.
+ * This class represents a Login entity in the clinic application.
+ * It serves as a robust, comprehensive, and efficient data model that
+ * encapsulates all the essential attributes of a login account, ensuring
+ * seamless integration with the rest of the application.
  */
 public class Login {
 
-    /** The unique ID of the login user. */
+    // The unique identifier of the login
     private Long id;
 
-    /** The username used to log in. */
+    // The username of the login
     private String username;
 
-    /** The password used to log in. */
+    // The password of the login
     private String password;
 
-    /** The date and time of the user's last login. */
+    // The last login date of the login
     private Date lastLoginDate;
 
-    /** The role of the user (for example, admin or student). */
+    // The role of the login
     private String role;
 
     /**
-     * Retrieves the ID of the login user.
+     * This method returns the id of the login.
      *
-     * @return The ID of the login user.
+     * @return The id of the login.
      */
     public Long getId() {
+        // Return the id
         return id;
     }
 
     /**
-     * Sets the ID of the login user.
+     * This method sets the id of the login.
      *
-     * @param newId The ID of the login user.
+     * @param newId The newId parameter representing the new id.
      */
     public void setId(Long newId) {
+        // Validate that the id is not null
+        if (newId == null) {
+            // Throw an exception if the id is null
+            throw new IllegalArgumentException("❌ The id must not be null");
+        }
+        // Set the id
         this.id = newId;
     }
 
     /**
-     * Retrieves the username of the login user.
+     * This method returns the username of the login.
      *
-     * @return The username of the login user.
+     * @return The username of the login.
      */
     public String getUsername() {
+        // Return the username
         return username;
     }
 
     /**
-     * Sets the username of the login user.
+     * This method sets the username of the login.
      *
-     * @param newUsername The username of the login user.
+     * @param newUsername The newUsername parameter representing the new username.
      */
     public void setUsername(String newUsername) {
+        // Validate that the username is not null or empty
+        if (newUsername == null || newUsername.trim().isEmpty()) {
+            // Throw an exception if the username is invalid
+            throw new IllegalArgumentException("❌ The username must not be empty");
+        }
+        // Set the username
         this.username = newUsername;
     }
 
     /**
-     * Retrieves the password of the login user.
+     * This method returns the password of the login.
      *
-     * @return The password of the login user.
+     * @return The password of the login.
      */
     public String getPassword() {
+        // Return the password
         return password;
     }
 
     /**
-     * Sets the password of the login user.
+     * This method sets the password of the login.
      *
-     * @param newPassword The password of the login user.
+     * @param newPassword The newPassword parameter representing the new password.
      */
     public void setPassword(String newPassword) {
+        // Validate that the password is not null or empty
+        if (newPassword == null || newPassword.trim().isEmpty()) {
+            // Throw an exception if the password is invalid
+            throw new IllegalArgumentException("❌ The password must not be empty");
+        }
+        // Set the password
         this.password = newPassword;
     }
 
     /**
-     * Retrieves the date of the user's last login.
+     * This method returns the last login date of the login.
      *
-     * @return The date of the last login.
+     * @return The last login date of the login.
      */
     public Date getLastLoginDate() {
+        // Return the last login date
         return lastLoginDate;
     }
 
     /**
-     * Sets the date of the user's last login.
+     * This method sets the last login date of the login.
      *
-     * @param newLastLoginDate The date of the last login.
+     * @param newLastLoginDate The newLastLoginDate parameter representing the new date.
      */
     public void setLastLoginDate(Date newLastLoginDate) {
+        // Set the last login date
         this.lastLoginDate = newLastLoginDate;
     }
 
     /**
-     * Retrieves the role of the login user.
+     * This method returns the role of the login.
      *
-     * @return The role of the login user.
+     * @return The role of the login.
      */
     public String getRole() {
+        // Return the role
         return role;
     }
 
     /**
-     * Sets the role of the login user.
+     * This method sets the role of the login.
      *
-     * @param newRole The role of the login user.
+     * @param newRole The newRole parameter representing the new role.
      */
     public void setRole(String newRole) {
+        // Validate that the role is not null or empty
+        if (newRole == null || newRole.trim().isEmpty()) {
+            // Throw an exception if the role is invalid
+            throw new IllegalArgumentException("❌ The role must not be empty");
+        }
+        // Set the role
         this.role = newRole;
     }
 }
