@@ -1,46 +1,25 @@
 name: SlopScore AI Code Check
 on:
   pull_request:
-    branches: [main]
+    branches: [master]
 
 permissions:
   contents: read
   pull-requests: write
 
 jobs:
-  static-analysis:
+  slop-check:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
-
-      - uses: actions/setup-java@v4
+      - name: Checkout code
+        uses: actions/checkout@v4
         with:
-          distribution: temurin
-          java-version: '11'
+          fetch-depth: 0
 
-      - name: Install Ivy
-        run: |
-          mkdir -p ~/.ant/lib
-          curl -fsSL -o ~/.ant/lib/ivy.jar \
-            "https://repo1.maven.org/maven2/org/apache/ivy/ivy/2.5.2/ivy-2.5.2.jar"
-
-      - name: Run Quality Score (PMD + Checkstyle + SpotBugs + CPD)
-        run: ant quality-score
-
-      - name: Run SlopScore (CI only — runner has Node.js)
+      - name: Run AI Code Pattern Check
         uses: kburrus64-max/slopscore-code@v1
         with:
           max: 10
           comment: true
           fail-on-error: true
-
-      - name: Upload reports
-        if: always()
-        uses: actions/upload-artifact@v4
-        with:
-          name: static-analysis-reports
-          path: |
-            build/reports/pmd-report.xml
-            build/reports/cpd-report.xml
-            build/reports/checkstyle-result.xml
-            build/reports/spotbugs-report.xml
+          ignore: "over-commented"

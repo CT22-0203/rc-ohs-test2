@@ -35,6 +35,7 @@ public class Prescription {
 
     /**
      * Retrieves the unique ID of the prescription.
+     *
      * @return the unique ID of the prescription.
      */
     public Long getId() {
@@ -43,6 +44,7 @@ public class Prescription {
 
     /**
      * Sets the unique ID of the prescription.
+     *
      * @param newId the unique ID of the prescription.
      */
     public void setId(Long newId) {
@@ -51,6 +53,7 @@ public class Prescription {
 
     /**
      * Retrieves the consultation associated with the prescription.
+     *
      * @return the consultation associated with the prescription.
      */
     public Consultation getConsultation() {
@@ -59,6 +62,7 @@ public class Prescription {
 
     /**
      * Sets the consultation associated with the prescription.
+     *
      * @param newConsultation the consultation associated with the prescription.
      */
     public void setConsultation(Consultation newConsultation) {
@@ -67,6 +71,7 @@ public class Prescription {
 
     /**
      * Retrieves the medicine stock associated with the prescription.
+     *
      * @return the medicine stock associated with the prescription.
      */
     public MedicineStock getMedicineStock() {
@@ -75,6 +80,7 @@ public class Prescription {
 
     /**
      * Sets the medicine stock associated with the prescription.
+     *
      * @param newMedicineStock the medicine stock associated with the
      *                         prescription.
      */
@@ -84,6 +90,7 @@ public class Prescription {
 
     /**
      * Retrieves the personnel who prescribed the medicine.
+     *
      * @return the personnel who prescribed the medicine.
      */
     public Personnel getPersonnel() {
@@ -92,6 +99,7 @@ public class Prescription {
 
     /**
      * Sets the personnel who prescribed the medicine.
+     *
      * @param newPersonnel the personnel who prescribed the medicine.
      */
     public void setPersonnel(Personnel newPersonnel) {
@@ -100,6 +108,7 @@ public class Prescription {
 
     /**
      * Retrieves the quantity of medicine to dispense.
+     *
      * @return the quantity of medicine to dispense.
      */
     public int getQuantityToDispense() {
@@ -108,6 +117,7 @@ public class Prescription {
 
     /**
      * Sets the quantity of medicine to dispense.
+     *
      * @param newQuantityToDispense the quantity of medicine to dispense.
      */
     public void setQuantityToDispense(int newQuantityToDispense) {
@@ -116,6 +126,7 @@ public class Prescription {
 
     /**
      * Retrieves the prescribed dose.
+     *
      * @return the prescribed dose.
      */
     public String getDose() {
@@ -124,6 +135,7 @@ public class Prescription {
 
     /**
      * Sets the prescribed dose.
+     *
      * @param newDose the prescribed dose.
      */
     public void setDose(String newDose) {
@@ -132,6 +144,7 @@ public class Prescription {
 
     /**
      * Retrieves how often the medicine should be taken.
+     *
      * @return how often the medicine should be taken.
      */
     public String getFrequency() {
@@ -140,6 +153,7 @@ public class Prescription {
 
     /**
      * Sets how often the medicine should be taken.
+     *
      * @param newFrequency how often the medicine should be taken.
      */
     public void setFrequency(String newFrequency) {
@@ -148,6 +162,7 @@ public class Prescription {
 
     /**
      * Retrieves the additional instructions for the patient.
+     *
      * @return the additional instructions for the patient.
      */
     public String getInstructions() {
@@ -156,6 +171,7 @@ public class Prescription {
 
     /**
      * Sets the additional instructions for the patient.
+     *
      * @param newInstructions the additional instructions for the patient.
      */
     public void setInstructions(String newInstructions) {
