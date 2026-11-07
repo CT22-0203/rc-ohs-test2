@@ -107,26 +107,29 @@
         <echo>Checkstyle report: ${reports.dir}/checkstyle-result.xml</echo>
     </target>
 
-    <!-- Runs SpotBugs on compiled classes -->
     <target name="spotbugs" depends="compile" description="Runs SpotBugs">
         <echo>Running SpotBugs...</echo>
         <mkdir dir="${reports.dir}"/>
+
+        <mkdir dir="${build.dir}/spotbugs/lib"/>
+        <ivy:retrieve pattern="${build.dir}/spotbugs/lib/[artifact](-[classifier]).[ext]"
+                      conf="spotbugs"/>
+
         <taskdef name="spotbugs"
                  classname="edu.umd.cs.findbugs.anttask.FindBugsTask"
                  classpathref="spotbugs.path"/>
-        <spotbugs home="${ant.home}/../spotbugs"
+
+        <spotbugs home="${build.dir}/spotbugs"
                   effort="max"
-                  threshold="medium"
+                  reportLevel="medium"
                   jvmargs="-Xmx512m"
-                  output="${reports.dir}/spotbugs-report.xml"
+                  outputFile="${reports.dir}/spotbugs-report.xml"
                   failOnError="true">
-            <class>
-                <fileset dir="${classes.dir}" includes="**/*.class"/>
-            </class>
-            <source>
-                <fileset dir="${src.dir}" includes="**/*.java"/>
-            </source>
-            <plugin classpathref="spotbugs.path"/>
+            <class location="${classes.dir}"/>
+            <sourcePath path="${src.dir}"/>
+            <auxClasspath>
+                <path refid="compile.path"/>
+            </auxClasspath>
         </spotbugs>
         <echo>SpotBugs report: ${reports.dir}/spotbugs-report.xml</echo>
     </target>
