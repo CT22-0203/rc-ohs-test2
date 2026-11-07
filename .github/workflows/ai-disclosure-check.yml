@@ -53,7 +53,7 @@ jobs:
         env:
           BASE_REF: ${{ github.base_ref }}
           THRESHOLD: '20'
-          FAIL_ON_THRESHOLD: 'false'
+          FAIL_ON_THRESHOLD: 'true'
           LARGE_COMMIT_LINES: '300'
         run: |
           SCORE=0
