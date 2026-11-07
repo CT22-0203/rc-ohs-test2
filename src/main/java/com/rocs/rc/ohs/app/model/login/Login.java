@@ -19,8 +19,11 @@ public class Login {
     /** The date and time of the user's last login. */
     private Date lastLoginDate;
 
-    /** The role of the user (for example, admin or student). */
-    private String role;
+    /** The ID of the role of the login user. */
+    private Long roleId;
+
+    /** The ID of the person who owns the login account. */
+    private Long personId;
 
     /**
      * Retrieves the ID of the login user.
@@ -95,20 +98,38 @@ public class Login {
     }
 
     /**
-     * Retrieves the role of the login user.
+     * Retrieves the ID of the role of the login user.
      *
-     * @return The role of the login user.
+     * @return The ID of the role of the login user.
      */
-    public String getRole() {
-        return role;
+    public Long getRoleId() {
+        return roleId;
     }
 
     /**
-     * Sets the role of the login user.
+     * Sets the ID of the role of the login user.
      *
-     * @param newRole The role of the login user.
+     * @param newRoleId The ID of the role of the login user.
      */
-    public void setRole(String newRole) {
-        this.role = newRole;
+    public void setRoleId(Long newRoleId) {
+        this.roleId = newRoleId;
+    }
+
+    /**
+     * Retrieves the ID of the person who owns the login account.
+     *
+     * @return The ID of the person who owns the login account.
+     */
+    public Long getPersonId() {
+        return personId;
+    }
+
+    /**
+     * Sets the ID of the person who owns the login account.
+     *
+     * @param newPersonId The ID of the person who owns the login account.
+     */
+    public void setPersonId(Long newPersonId) {
+        this.personId = newPersonId;
     }
 }
