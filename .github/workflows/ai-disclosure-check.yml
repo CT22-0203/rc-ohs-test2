@@ -19,6 +19,6 @@ jobs:
       - name: Run AI Code Pattern Check
         uses: kburrus64-max/slopscore-code@v1
         with:
-          max: 20           # Fails if score goes above threshold
+          max: 10           # Fails if score goes above threshold
           comment: true     # Posts a summary comment directly on the PR
           fail-on-error: true
