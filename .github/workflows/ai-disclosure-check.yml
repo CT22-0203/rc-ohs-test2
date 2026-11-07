@@ -1,29 +1,32 @@
 # =============================================================================
-# AI Disclosure Check
+# AI Disclosure Check (with threshold)
 # =============================================================================
 # Purpose:
-#   Scans the commits of a pull request for signs of AI tools, such as
-#   "Co-Authored-By: Claude" trailers or "Generated with ..." footers.
+#   Gives a pull request an "AI score" from 0 to 100 based on signals found in
+#   the commits and in the added Java code. If the score reaches the threshold,
+#   the job shows a warning (or fails, if FAIL_ON_THRESHOLD is true).
 #
-# What it can detect:
-#   Only markers that were left in the git history (author, email, commit
-#   message). It cannot tell if code was written by AI when there is no marker.
+# Scoring:
+#   +50  AI marker in the commit history (author, email, message, trailer)
+#   +50  AI disclosure comment in the added Java lines
+#   +10  A single commit that adds more than LARGE_COMMIT_LINES lines
 #
-# Behavior:
-#   Report only. The job shows a warning and lists the matching lines. It does
-#   not fail the build. To block the PR, add "exit 1" after the echo of
-#   "$MATCHES".
+# Settings (see the env block of the step):
+#   THRESHOLD          Score that triggers the warning. Set to 20.
+#   FAIL_ON_THRESHOLD  "true" makes the job fail at or above the threshold.
+#   LARGE_COMMIT_LINES Lines added by one commit to count as "large".
 #
-# Notes:
-#   - Matches can be false alarms (for example, Dependabot uses [bot]).
-#   - Do not use the result as proof. Use it as a reason to ask questions.
+# Limits:
+#   The weights are our own choice, not a validated measure. The score is not
+#   a probability and not proof. It only detects markers left in the history
+#   or the code. Do not use it alone to accuse anyone.
 # =============================================================================
 
 name: ai-disclosure-check
 
 on:
   pull_request:
-    branches: [ "main" ]
+    branches: [ "master" ]
 
 permissions:
   contents: read
@@ -37,16 +40,60 @@ jobs:
         with:
           fetch-depth: 0
 
-      # Step 2: Search the commits of this pull request for AI markers.
-      - name: Scan commits for AI markers
+      # Step 2: Calculate the score and compare it with the threshold.
+      - name: Calculate AI score
         env:
           BASE_REF: ${{ github.base_ref }}
+          THRESHOLD: '20'
+          FAIL_ON_THRESHOLD: 'false'
+          LARGE_COMMIT_LINES: '300'
         run: |
-          PATTERN='co-authored-by:.*(claude|copilot|codex|cursor|gemini|chatgpt|openai|anthropic)|generated with|aider:|noreply@anthropic.com|\[bot\]'
-          MATCHES=$(git log "origin/${BASE_REF}..HEAD" --format='%h %an <%ae>%n%B' | grep -Ei "$PATTERN" || true)
-          if [ -n "$MATCHES" ]; then
-            echo "::warning::Possible AI markers found in commit history"
-            echo "$MATCHES"
+          SCORE=0
+
+          COMMIT_PATTERN='co-authored-by:.*(claude|copilot|codex|cursor|gemini|chatgpt|openai|anthropic)|generated with|aider:|noreply@anthropic.com|\[bot\]'
+          COMMIT_MATCHES=$(git log "origin/${BASE_REF}..HEAD" --format='%h %an <%ae>%n%B' | grep -Ei "$COMMIT_PATTERN" || true)
+          if [ -n "$COMMIT_MATCHES" ]; then
+            SCORE=$((SCORE + 50))
+            echo "+50 AI marker in commit history:"
+            echo "$COMMIT_MATCHES"
+          fi
+
+          CODE_PATTERN='(generated|written|created|assisted) (by|with) (chatgpt|claude|copilot|gemini|codex|cursor|ai)|as an ai language model'
+          CODE_MATCHES=$(git diff "origin/${BASE_REF}...HEAD" -U0 -- '*.java' | grep -E '^\+([^+]|$)' | grep -Ei "$CODE_PATTERN" || true)
+          if [ -n "$CODE_MATCHES" ]; then
+            SCORE=$((SCORE + 50))
+            echo "+50 AI disclosure in added code:"
+            echo "$CODE_MATCHES"
+          fi
+
+          LARGE=0
+          for c in $(git rev-list "origin/${BASE_REF}..HEAD"); do
+            ADDED=$(git show --numstat --format= "$c" | awk '{s+=$1} END {print s+0}')
+            if [ "$ADDED" -gt "$LARGE_COMMIT_LINES" ]; then
+              LARGE=1
+              echo "Large commit ${c}: ${ADDED} lines added"
+            fi
+          done
+          if [ "$LARGE" -eq 1 ]; then
+            SCORE=$((SCORE + 10))
+            echo "+10 large commit"
+          fi
+
+          if [ "$SCORE" -gt 100 ]; then
+            SCORE=100
+          fi
+
+          echo "AI score: ${SCORE}/100 (threshold: ${THRESHOLD})"
+          {
+            echo "### AI disclosure check"
+            echo "Score: **${SCORE}/100**, threshold: **${THRESHOLD}**"
+          } >> "$GITHUB_STEP_SUMMARY"
+
+          if [ "$SCORE" -ge "$THRESHOLD" ]; then
+            echo "::warning::AI score ${SCORE} is at or above the threshold ${THRESHOLD}"
+            if [ "$FAIL_ON_THRESHOLD" = "true" ]; then
+              exit 1
+            fi
           else
-            echo "No AI markers found in commit history"
+            echo "AI score is below the threshold"
           fi
