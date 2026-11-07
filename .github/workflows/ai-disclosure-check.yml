@@ -1,24 +1,16 @@
-name: SlopScore AI Code Check
+name: aislop
+
 on:
   pull_request:
+  push:
     branches: [main]
 
-permissions:
-  contents: read
-  pull-requests: write
-
 jobs:
-  slop-check:
+  quality-gate:
     runs-on: ubuntu-latest
     steps:
-      - name: Checkout code
-        uses: actions/checkout@v4
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
         with:
-          fetch-depth: 0 # Diffs against base branch
-
-      - name: Run AI Code Pattern Check
-        uses: kburrus64-max/slopscore-code@v1
-        with:
-          max: 10           # Fails if score goes above threshold
-          comment: true     # Posts a summary comment directly on the PR
-          fail-on-error: true
+          node-version: 24
+      - run: npx --yes aislop@latest ci

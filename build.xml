@@ -31,6 +31,7 @@
         <ivy:cachepath pathid="runtime.path" conf="runtime"/>
         <ivy:cachepath pathid="test.path"    conf="test"/>
         <ivy:cachepath pathid="pmd.path"     conf="pmd"/>
+        <ivy:cachepath pathid="checkstyle.path" conf="checkstyle"/>
         <mkdir dir="${classes.dir}"/>
         <mkdir dir="${dist.dir}"/>
         <mkdir dir="${test.classes.dir}"/>
@@ -89,6 +90,25 @@
         </pmd>
         <echo>PMD report: ${reports.dir}/pmd-report.xml</echo>
     </target>
+
+    <!-- Runs Checkstyle with the built-in Sun checks, same as the CI workflow -->
+    <target name="checkstyle" depends="init" description="Runs Checkstyle">
+        <echo>Running Checkstyle...</echo>
+        <mkdir dir="${reports.dir}"/>
+        <java classname="com.puppycrawl.tools.checkstyle.Main"
+              classpathref="checkstyle.path"
+              fork="true"
+              failonerror="false">
+            <sysproperty key="org.checkstyle.sun.suppressionfilter.config"
+                         value="src/main/resources/checkstyle-suppressions.xml"/>
+            <arg line="-c /sun_checks.xml -f xml -o ${reports.dir}/checkstyle-result.xml ${src.dir}"/>
+        </java>
+        <echo>Checkstyle report: ${reports.dir}/checkstyle-result.xml</echo>
+    </target>
+
+    <!-- Runs all code quality checks -->
+    <target name="quality" depends="checkstyle,cpd,pmd"
+            description="Runs all code quality checks"/>
 
     <path id="junit.libs">
         <fileset dir="${ant.home}/lib/junit"/>
