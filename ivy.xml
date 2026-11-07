@@ -15,7 +15,7 @@
         <conf name="test"    description="Required for test only" extends="runtime"/>
         <conf name="pmd"     description="PMD and CPD tools only"/>
         <conf name="checkstyle" visibility="private"/>
-        <config name="spotbugs" extends="compile"/>
+        <conf name="spotbugs" extends="compile"/>
     </configurations>
 
     <dependencies>
