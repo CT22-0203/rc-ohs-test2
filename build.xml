@@ -4,7 +4,6 @@
          xmlns:ivy="antlib:org.apache.ivy.ant">
 
     <property file="build.properties"/>
-    <!--    Build properties-->
     <property name="build.dir" location="build"/>
     <property name="classes.dir" location="${build.dir}/classes"/>
     <property name="dist.dir" location="${build.dir}/dist"/>
@@ -17,7 +16,7 @@
     <property name="lib.dir" location="${build.dir}/lib"/>
     <property name="reports.dir" location="${build.dir}/reports"/>
 
-    <target name="clean" >
+    <target name="clean">
         <echo>Cleaning temporary directories...</echo>
         <delete includeemptydirs="true">
             <fileset dir="." includes="${temp.directories}"/>
@@ -32,7 +31,6 @@
         <ivy:cachepath pathid="test.path"    conf="test"/>
         <ivy:cachepath pathid="pmd.path"     conf="pmd"/>
         <ivy:cachepath pathid="checkstyle.path" conf="checkstyle"/>
-        <ivy:cachepath pathid="spotbugs.path" conf="spotbugs"/>
         <mkdir dir="${classes.dir}"/>
         <mkdir dir="${dist.dir}"/>
         <mkdir dir="${test.classes.dir}"/>
@@ -62,7 +60,6 @@
                       conf="compile,runtime,test"/>
     </target>
 
-    <!-- Runs the PMD Copy-Paste Detector (CPD) on the main source code -->
     <target name="cpd" depends="init" description="Runs the Copy-Paste Detector">
         <echo>Running CPD...</echo>
         <mkdir dir="${reports.dir}"/>
@@ -77,7 +74,6 @@
         <echo>CPD report: ${reports.dir}/cpd-report.xml</echo>
     </target>
 
-    <!-- Runs PMD on the main source code using the quickstart ruleset -->
     <target name="pmd" depends="init" description="Runs PMD">
         <echo>Running PMD...</echo>
         <mkdir dir="${reports.dir}"/>
@@ -92,7 +88,6 @@
         <echo>PMD report: ${reports.dir}/pmd-report.xml</echo>
     </target>
 
-    <!-- Runs Checkstyle with the built-in Sun checks, same as the CI workflow -->
     <target name="checkstyle" depends="init" description="Runs Checkstyle">
         <echo>Running Checkstyle...</echo>
         <mkdir dir="${reports.dir}"/>
@@ -107,31 +102,15 @@
         <echo>Checkstyle report: ${reports.dir}/checkstyle-result.xml</echo>
     </target>
 
-    <target name="spotbugs" depends="compile" description="Runs SpotBugs">
-        <echo>Running SpotBugs...</echo>
-        <mkdir dir="${reports.dir}"/>
-
-        <mkdir dir="${build.dir}/spotbugs/lib"/>
-        <ivy:retrieve pattern="${build.dir}/spotbugs/lib/[artifact](-[classifier]).[ext]"
-                      conf="spotbugs"/>
-
-        <taskdef name="spotbugs"
-                 classname="edu.umd.cs.findbugs.anttask.FindBugsTask"
-                 classpathref="spotbugs.path"/>
-
-        <spotbugs home="${build.dir}/spotbugs"
-                  effort="max"
-                  reportLevel="medium"
-                  jvmargs="-Xmx512m"
-                  outputFile="${reports.dir}/spotbugs-report.xml"
-                  failOnError="true">
-            <class location="${classes.dir}"/>
-            <sourcePath path="${src.dir}"/>
-            <auxClasspath>
-                <path refid="compile.path"/>
-            </auxClasspath>
-        </spotbugs>
-        <echo>SpotBugs report: ${reports.dir}/spotbugs-report.xml</echo>
+    <!-- Quality Score: computes 0-100 from all reports, fails below threshold -->
+    <target name="quality-score" depends="compile, pmd, checkstyle, cpd"
+            description="Computes a 0-100 quality score">
+        <echo>Computing quality score...</echo>
+        <java classname="com.rocs.rc.ohs.tools.QualityScore"
+              classpath="${classes.dir}"
+              fork="true"
+              failonerror="true">
+        </java>
     </target>
 
     <path id="junit.libs">
@@ -175,13 +154,9 @@
                   encoding="UTF-8"
                   charset="UTF-8"
                   docencoding="UTF-8">
-
-            <!-- Packages to document -->
             <packageset dir="${src.dir}">
                 <include name="**/*.java"/>
             </packageset>
-
-            <!-- Classpath used while resolving types in Javadoc comments -->
             <classpath>
                 <pathelement path="${classes.dir}"/>
             </classpath>

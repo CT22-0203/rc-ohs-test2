@@ -1,13 +1,15 @@
-name: Java AI Checker
-
+name: SlopScore AI Code Check
 on:
   pull_request:
     branches: [main]
 
+permissions:
+  contents: read
+  pull-requests: write
+
 jobs:
   static-analysis:
     runs-on: ubuntu-latest
-
     steps:
       - uses: actions/checkout@v4
 
@@ -22,20 +24,15 @@ jobs:
           curl -fsSL -o ~/.ant/lib/ivy.jar \
             "https://repo1.maven.org/maven2/org/apache/ivy/ivy/2.5.2/ivy-2.5.2.jar"
 
-      - name: Compile
-        run: ant compile
+      - name: Run Quality Score (PMD + Checkstyle + SpotBugs + CPD)
+        run: ant quality-score
 
-      - name: Run PMD
-        run: ant pmd
-
-      - name: Run CPD
-        run: ant cpd
-
-      - name: Run Checkstyle
-        run: ant checkstyle
-
-      - name: Run SpotBugs
-        run: ant spotbugs
+      - name: Run SlopScore (CI only — runner has Node.js)
+        uses: kburrus64-max/slopscore-code@v1
+        with:
+          max: 10
+          comment: true
+          fail-on-error: true
 
       - name: Upload reports
         if: always()
