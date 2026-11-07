@@ -1,7 +1,7 @@
 name: SlopScore AI Code Check
 on:
   pull_request:
-    branches: [master]
+    branches: [main]
 
 permissions:
   contents: read
