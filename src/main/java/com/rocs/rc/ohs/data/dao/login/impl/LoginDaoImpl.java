@@ -28,8 +28,7 @@ public class LoginDaoImpl implements LoginDao {
 
         Login login = null;
         try (Connection conn = ConnectionHelper.getConnection()) {
-            PreparedStatement stmt = conn.prepareStatement(
-                    "select * from login where username = ?");
+            PreparedStatement stmt = conn.prepareStatement("select * from login where username = ?");
             stmt.setString(1, username);
 
             ResultSet rs = stmt.executeQuery();
@@ -39,8 +38,7 @@ public class LoginDaoImpl implements LoginDao {
                 login.setPassword(rs.getString("password"));
 
                 Long id = rs.getLong("id");
-                PreparedStatement stmt2 = conn.prepareStatement(
-                        "update login set last_login_date = ? where id = ?");
+                PreparedStatement stmt2 = conn.prepareStatement("update login set last_login_date = ? where id = ?");
                 stmt2.setDate(1, new Date(System.currentTimeMillis()));
                 stmt2.setLong(2, id);
 
