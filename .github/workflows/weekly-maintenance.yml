@@ -1,0 +1,22 @@
+name: Weekly Desktop App Maintenance
+
+on:
+  schedule:
+    - cron: '0 9 * * 1' # Tumatakbo tuwing Lunes ng alas-9 ng umaga
+  workflow_dispatch: # Para ma-trigger mo nang mano-mano anumang oras
+
+jobs:
+  maintenance:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Set up Java JDK
+        uses: actions/setup-java@v4
+        with:
+          distribution: 'temurin'
+          java-version: '11'
+
+      - name: Run Ant Build, Test, and PMD Checks
+        run: ant clean test pmd
