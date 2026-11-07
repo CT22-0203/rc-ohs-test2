@@ -1,4 +1,4 @@
-name: Java Static Analysis
+name: Java AI Checker
 
 on:
   pull_request:
@@ -16,7 +16,13 @@ jobs:
           distribution: temurin
           java-version: '21'
 
-      - name: Compile (resolves Ivy deps via init)
+      - name: Install Ivy
+        run: |
+          mkdir -p ~/.ant/lib
+          curl -fsSL -o ~/.ant/lib/ivy.jar \
+            "https://repo1.maven.org/maven2/org/apache/ivy/ivy/2.5.2/ivy-2.5.2.jar"
+
+      - name: Compile
         run: ant compile
 
       - name: Run PMD
