@@ -1,0 +1,52 @@
+# =============================================================================
+# AI Disclosure Check
+# =============================================================================
+# Purpose:
+#   Scans the commits of a pull request for signs of AI tools, such as
+#   "Co-Authored-By: Claude" trailers or "Generated with ..." footers.
+#
+# What it can detect:
+#   Only markers that were left in the git history (author, email, commit
+#   message). It cannot tell if code was written by AI when there is no marker.
+#
+# Behavior:
+#   Report only. The job shows a warning and lists the matching lines. It does
+#   not fail the build. To block the PR, add "exit 1" after the echo of
+#   "$MATCHES".
+#
+# Notes:
+#   - Matches can be false alarms (for example, Dependabot uses [bot]).
+#   - Do not use the result as proof. Use it as a reason to ask questions.
+# =============================================================================
+
+name: ai-disclosure-check
+
+on:
+  pull_request:
+    branches: [ "main" ]
+
+permissions:
+  contents: read
+
+jobs:
+  detect-ai:
+    runs-on: ubuntu-latest
+    steps:
+      # Step 1: Download the code with the full commit history.
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      # Step 2: Search the commits of this pull request for AI markers.
+      - name: Scan commits for AI markers
+        env:
+          BASE_REF: ${{ github.base_ref }}
+        run: |
+          PATTERN='co-authored-by:.*(claude|copilot|codex|cursor|gemini|chatgpt|openai|anthropic)|generated with|aider:|noreply@anthropic.com|\[bot\]'
+          MATCHES=$(git log "origin/${BASE_REF}..HEAD" --format='%h %an <%ae>%n%B' | grep -Ei "$PATTERN" || true)
+          if [ -n "$MATCHES" ]; then
+            echo "::warning::Possible AI markers found in commit history"
+            echo "$MATCHES"
+          else
+            echo "No AI markers found in commit history"
+          fi
