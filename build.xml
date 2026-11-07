@@ -32,6 +32,7 @@
         <ivy:cachepath pathid="test.path"    conf="test"/>
         <ivy:cachepath pathid="pmd.path"     conf="pmd"/>
         <ivy:cachepath pathid="checkstyle.path" conf="checkstyle"/>
+        <ivy:cachepath pathid="spotbugs.path" conf="spotbugs"/>
         <mkdir dir="${classes.dir}"/>
         <mkdir dir="${dist.dir}"/>
         <mkdir dir="${test.classes.dir}"/>
@@ -106,9 +107,29 @@
         <echo>Checkstyle report: ${reports.dir}/checkstyle-result.xml</echo>
     </target>
 
-    <!-- Runs all code quality checks -->
-    <target name="quality" depends="checkstyle,cpd,pmd"
-            description="Runs all code quality checks"/>
+    <!-- Runs SpotBugs on compiled classes -->
+    <target name="spotbugs" depends="compile" description="Runs SpotBugs">
+        <echo>Running SpotBugs...</echo>
+        <mkdir dir="${reports.dir}"/>
+        <taskdef name="spotbugs"
+                 classname="edu.umd.cs.findbugs.anttask.FindBugsTask"
+                 classpathref="spotbugs.path"/>
+        <spotbugs home="${ant.home}/../spotbugs"
+                  effort="max"
+                  threshold="medium"
+                  jvmargs="-Xmx512m"
+                  output="${reports.dir}/spotbugs-report.xml"
+                  failOnError="true">
+            <class>
+                <fileset dir="${classes.dir}" includes="**/*.class"/>
+            </class>
+            <source>
+                <fileset dir="${src.dir}" includes="**/*.java"/>
+            </source>
+            <plugin classpathref="spotbugs.path"/>
+        </spotbugs>
+        <echo>SpotBugs report: ${reports.dir}/spotbugs-report.xml</echo>
+    </target>
 
     <path id="junit.libs">
         <fileset dir="${ant.home}/lib/junit"/>

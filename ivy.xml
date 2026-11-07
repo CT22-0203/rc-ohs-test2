@@ -15,6 +15,7 @@
         <conf name="test"    description="Required for test only" extends="runtime"/>
         <conf name="pmd"     description="PMD and CPD tools only"/>
         <conf name="checkstyle" visibility="private"/>
+        <config name="spotbugs" extends="compile"/>
     </configurations>
 
     <dependencies>
@@ -33,6 +34,8 @@
         <dependency org="net.sourceforge.pmd" name="pmd-ant" rev="7.14.0" conf="pmd->default"/>
         <dependency org="net.sourceforge.pmd" name="pmd-java" rev="7.14.0" conf="pmd->default"/>
         <dependency org="com.puppycrawl.tools" name="checkstyle" rev="10.17.0" conf="checkstyle->default"/>
+        <dependency org="com.github.spotbugs" name="spotbugs" rev="4.8.6"/>
+        <dependency org="com.h3xstream.findsecbugs" name="findsecbugs-plugin" rev="1.14.0"/>
 
     </dependencies>
 </ivy-module>

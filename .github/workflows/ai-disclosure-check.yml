@@ -1,16 +1,43 @@
-name: aislop
+name: Java Static Analysis
 
 on:
   pull_request:
-  push:
     branches: [main]
 
 jobs:
-  quality-gate:
+  static-analysis:
     runs-on: ubuntu-latest
+
     steps:
       - uses: actions/checkout@v4
-      - uses: actions/setup-node@v4
+
+      - uses: actions/setup-java@v4
         with:
-          node-version: 24
-      - run: npx --yes aislop@latest ci
+          distribution: temurin
+          java-version: '21'
+
+      - name: Compile (resolves Ivy deps via init)
+        run: ant compile
+
+      - name: Run PMD
+        run: ant pmd
+
+      - name: Run CPD
+        run: ant cpd
+
+      - name: Run Checkstyle
+        run: ant checkstyle
+
+      - name: Run SpotBugs
+        run: ant spotbugs
+
+      - name: Upload reports
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: static-analysis-reports
+          path: |
+            build/reports/pmd-report.xml
+            build/reports/cpd-report.xml
+            build/reports/checkstyle-result.xml
+            build/reports/spotbugs-report.xml
