@@ -1,25 +1,30 @@
-name: SlopScore AI Code Check
+name: AI Code Review on PR
+
 on:
   pull_request:
-    branches: [main]
-
-permissions:
-  contents: read
-  pull-requests: write
+    types: [opened, reopened, ready_for_review]
+  issue_comment:
+    types: [created]
 
 jobs:
-  slop-check:
+  pr_agent_job:
+    if: ${{ github.event.sender.type != 'Bot' }}
     runs-on: ubuntu-latest
+    permissions:
+      issues: write
+      pull-requests: write
+      contents: write
+    name: Running PR AI Code Review
     steps:
-      - name: Checkout code
-        uses: actions/checkout@v4
-        with:
-          fetch-depth: 0
-
-      - name: Run AI Code Pattern Check
-        uses: kburrus64-max/slopscore-code@v1
-        with:
-          max: 10
-          comment: true
-          fail-on-error: true
-          ignore: "over-commented"
+      - name: PR Agent action step
+        id: pragent
+        uses: qodo-ai/pr-agent@v0.31
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          config.model: "gemini/gemini-2.5-flash"
+          config.fallback_models: '["gemini/gemini-2.5-flash"]'
+          GOOGLE_AI_STUDIO.GEMINI_API_KEY: ${{ secrets.GEMINI_API_KEY }}
+          github_action_config.auto_review: "true"
+          github_action_config.auto_describe: "true"
+          github_action_config.auto_improve: "true"
+          github_action_config.pr_actions: '["opened", "reopened", "ready_for_review"]'
