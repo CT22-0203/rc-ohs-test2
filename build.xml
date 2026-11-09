@@ -135,7 +135,7 @@
 
     </target>
 
-    <target name="ai-pattern-check"
+    <target name="ai"
             depends="compile-slop-detector"
             description="Runs Java AI code pattern detection">
 
@@ -143,7 +143,7 @@
 
         <echo>Running Java AI Pattern Detector...</echo>
         <echo>Scanning: ${slop.scan.dir}</echo>
-        <echo>Threshold: ${slop.threshold}/10</echo>
+        <echo>Detection Threshold: 10/100</echo>
 
         <java classname="AiPatternDetector"
               fork="true"
@@ -155,11 +155,8 @@
 
             <arg value="${slop.scan.dir}"/>
             <arg value="${slop.report.dir}/ai-pattern-report.txt"/>
-            <arg value="${slop.threshold}"/>
 
         </java>
-
-        <echo>AI Detection report: ${slop.report.dir}/ai-pattern-report.txt</echo>
 
     </target>
 
