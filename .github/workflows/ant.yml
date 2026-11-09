@@ -43,5 +43,12 @@ jobs:
 
           wget -O "$HOME/.ant/lib/junit/opentest4j-1.3.0.jar" https://repo.maven.apache.org/maven2/org/opentest4j/opentest4j/1.3.0/opentest4j-1.3.0.jar
 
+      - name: Verify Ivy Installation
+        run: |
+          ls -lh "$HOME/.ant/lib/ivy-2.5.2.jar"
+
+      - name: Copy Dependencies
+        run: ant -lib "$HOME/.ant/lib" copy-dependencies
+
       - name: Build with Ant
-        run: ant -noinput -buildfile build.xml
+        run: ant -lib "$HOME/.ant/lib" -noinput -buildfile build.xml
