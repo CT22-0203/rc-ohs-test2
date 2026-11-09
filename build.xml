@@ -131,8 +131,8 @@
 
         <javac srcdir="${slop.src.dir}"
                destdir="${slop.classes.dir}"
-               source="21"
-               target="21"
+               source="11"
+               target="11"
                encoding="UTF-8"
                includeantruntime="false"
                failonerror="true"/>
