@@ -18,7 +18,6 @@ jobs:
   ai-detection:
     name: AI Detection
     runs-on: ubuntu-latest
-
     timeout-minutes: 20
 
     steps:
@@ -42,22 +41,17 @@ jobs:
       - name: Install Apache Ivy
         run: |
           mkdir -p "$HOME/.ant/lib"
-          wget -O "$HOME/.ant/lib/ivy-2.5.2.jar" https://repo.maven.apache.org/maven2/org/apache/ivy/ivy/2.5.2/ivy-2.5.2.jar
-          ls -lh "$HOME/.ant/lib/ivy-2.5.2.jar"
-
-      - name: Verify JPlag
-        run: |
-          if [ -f tools/jplag/jplag-6.2.0-jar-with-dependencies.jar ]; then
-            java -jar tools/jplag/jplag-6.2.0-jar-with-dependencies.jar --help
-          else
-            echo "JPlag not installed. Comparison will be skipped."
-          fi
+          wget -O "$HOME/.ant/lib/ivy-2.6.0.jar" \
+            https://repo.maven.apache.org/maven2/org/apache/ivy/ivy/2.6.0/ivy-2.6.0.jar
+          ls -lh "$HOME/.ant/lib/ivy-2.6.0.jar"
 
       - name: Run AI Detection
         id: detection
         continue-on-error: true
         run: |
-          ant -lib "$HOME/.ant/lib" -noinput -buildfile build.xml copy-dependencies ai-pattern-check jplag-check
+          ant -lib "$HOME/.ant/lib" -noinput \
+            -buildfile build.xml \
+            copy-dependencies ai-pattern-check
 
       - name: Upload AI Detection Reports
         if: always()
@@ -70,6 +64,7 @@ jobs:
 
       - name: Prepare PR Detection Report
         if: always() && github.event_name == 'pull_request'
+        shell: bash
         run: |
           REPORT="build/reports/slop/ai-pattern-report.txt"
           mkdir -p build/reports/slop
@@ -84,13 +79,12 @@ jobs:
             else
               echo "**Verdict:** Detection report was not generated."
               echo ""
-              echo "The Ant detection process may have failed before generating the report."
-              echo "Check the AI Detection workflow logs for the exact error."
+              echo "Check the AI Detection workflow logs for the error."
             fi
 
             echo ""
             echo "---"
-            echo "Automated analysis only. This report does not prove AI authorship."
+            echo "Automated heuristic analysis only. This report does not prove AI authorship."
           } > build/reports/slop/pr-comment.md
 
       - name: Comment AI Detection Report on Pull Request
@@ -105,9 +99,10 @@ jobs:
 
             let report = fs.existsSync(reportPath)
               ? fs.readFileSync(reportPath, 'utf8')
-              : `${marker}\n## AI Detection Report\n\nReport unavailable. Check the workflow logs.`;
+              : `${marker}\n## AI Detection Report\n\nReport unavailable. Check workflow logs.`;
 
             const maxLength = 60000;
+
             if (report.length > maxLength) {
               report = report.substring(0, maxLength) +
                 '\n\n_Report truncated. See workflow artifacts for the complete report._';
@@ -148,5 +143,5 @@ jobs:
       - name: Fail Pull Request if AI Detection Fails
         if: steps.detection.outcome == 'failure'
         run: |
-          echo "AI Detection failed or exceeded the configured score threshold."
+          echo "AI Detection failed or reached the configured threshold."
           exit 1

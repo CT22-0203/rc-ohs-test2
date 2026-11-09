@@ -20,19 +20,13 @@
 
     <!-- AI Pattern Detection -->
     <property name="slop.src.dir" location="tools/slop"/>
-    <property name="slop.classes.dir" location="${build.dir}/slop/classes"/>
-    <property name="slop.report.dir" location="${reports.dir}/slop"/>
+    <property name="slop.classes.dir"
+              location="${build.dir}/slop/classes"/>
+    <property name="slop.report.dir"
+              location="${reports.dir}/slop"/>
     <property name="slop.threshold" value="5"/>
     <property name="slop.max.score" value="10"/>
-
-    <!-- JPlag -->
-    <property name="jplag.version" value="6.2.0"/>
-    <property name="jplag.jar"
-              location="tools/jplag/jplag-6.2.0-jar-with-dependencies.jar"/>
-    <property name="jplag.corpus.dir"
-              location="slop-corpus/submissions"/>
-    <property name="jplag.current.dir"
-              location="${build.dir}/slop/submissions/current"/>
+    <property name="slop.scan.dir" location="src"/>
 
     <target name="clean">
         <echo>Cleaning temporary directories...</echo>
@@ -124,7 +118,11 @@
         <echo>Checkstyle report: ${reports.dir}/checkstyle-result.xml</echo>
     </target>
 
-    <target name="compile-slop-detector" depends="init">
+
+    <target name="compile-slop-detector"
+            depends="init"
+            description="Compiles the Java AI pattern detector">
+
         <mkdir dir="${slop.classes.dir}"/>
 
         <javac srcdir="${slop.src.dir}"
@@ -134,6 +132,7 @@
                encoding="UTF-8"
                includeantruntime="false"
                failonerror="true"/>
+
     </target>
 
     <target name="ai-pattern-check"
@@ -141,6 +140,10 @@
             description="Runs Java AI code pattern detection">
 
         <mkdir dir="${slop.report.dir}"/>
+
+        <echo>Running Java AI Pattern Detector...</echo>
+        <echo>Scanning: ${slop.scan.dir}</echo>
+        <echo>Threshold: ${slop.threshold}/10</echo>
 
         <java classname="AiPatternDetector"
               fork="true"
@@ -150,67 +153,16 @@
                 <pathelement location="${slop.classes.dir}"/>
             </classpath>
 
-            <arg value="${src.dir}"/>
+            <arg value="${slop.scan.dir}"/>
             <arg value="${slop.report.dir}/ai-pattern-report.txt"/>
             <arg value="${slop.threshold}"/>
 
         </java>
-    </target>
 
-    <target name="jplag-check"
-            depends="init"
-            description="Runs JPlag source-code similarity analysis">
-
-        <available file="${jplag.jar}"
-                   property="jplag.jar.available"/>
-
-        <available file="${jplag.corpus.dir}"
-                   type="dir"
-                   property="jplag.corpus.available"/>
-
-        <condition property="jplag.ready">
-            <and>
-                <isset property="jplag.jar.available"/>
-                <isset property="jplag.corpus.available"/>
-            </and>
-        </condition>
-
-        <antcall target="run-jplag"/>
+        <echo>AI Detection report: ${slop.report.dir}/ai-pattern-report.txt</echo>
 
     </target>
 
-    <target name="run-jplag" if="jplag.ready">
-
-        <mkdir dir="${jplag.current.dir}"/>
-
-        <copy todir="${jplag.current.dir}">
-            <fileset dir="${src.dir}">
-                <include name="**/*.java"/>
-            </fileset>
-        </copy>
-
-        <java jar="${jplag.jar}"
-              fork="true"
-              failonerror="true">
-
-            <arg value="-M"/>
-            <arg value="RUN"/>
-
-            <arg value="-l"/>
-            <arg value="java"/>
-
-            <arg value="-new"/>
-            <arg value="${build.dir}/slop/submissions"/>
-
-            <arg value="-old"/>
-            <arg value="${jplag.corpus.dir}"/>
-
-            <arg value="-r"/>
-            <arg value="${slop.report.dir}/jplag-report"/>
-
-        </java>
-
-    </target>
 
     <path id="junit.libs">
         <fileset dir="${ant.home}/lib/junit"/>

@@ -1,0 +1,12 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<module version="4">
+  <component name="FacetManager">
+    <facet type="IvyIDEA" name="IvyIDEA">
+      <configuration>
+        <option name="ivyFile" value="C:\Users\Admin\Desktop\rc-ohs-test2\ivy.xml" />
+        <option name="useCustomIvySettings" value="false" />
+        <option name="useProjectSettings" value="false" />
+      </configuration>
+    </facet>
+  </component>
+</module>
