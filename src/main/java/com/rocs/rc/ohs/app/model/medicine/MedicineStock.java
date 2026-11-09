@@ -10,7 +10,7 @@ import java.time.LocalDateTime;
 public class MedicineStock {
 
     /** The unique ID of the medicine stock. */
-    private Long id;
+    private String id;
 
     /** The medicine associated with the stock. */
     private Medicine medicine;
@@ -35,7 +35,7 @@ public class MedicineStock {
      *
      * @return the unique ID of the medicine stock.
      */
-    public Long getId() {
+    public String getId() {
         return id;
     }
 
@@ -44,7 +44,7 @@ public class MedicineStock {
      *
      * @param newId the unique ID of the medicine stock.
      */
-    public void setId(Long newId) {
+    public void setId(String newId) {
         this.id = newId;
     }
 

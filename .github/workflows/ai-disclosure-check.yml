@@ -4,8 +4,6 @@ on:
   pull_request:
     types: [opened, reopened, ready_for_review]
   issue_comment:
-    types: [created]
-
 jobs:
   pr_agent_job:
     if: ${{ github.event.sender.type != 'Bot' }}
@@ -18,13 +16,13 @@ jobs:
     steps:
       - name: PR Agent action step
         id: pragent
-        uses: qodo-ai/pr-agent@v0.31
+        uses: qodo-ai/pr-agent@main
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-          config.model: "gemini/gemini-2.5-flash"
-          config.fallback_models: '["gemini/gemini-2.5-flash"]'
+          github_action_config.model: "gemini/gemini-1.5-flash"
           GOOGLE_AI_STUDIO.GEMINI_API_KEY: ${{ secrets.GEMINI_API_KEY }}
+          # Example: Enable/disable tools
           github_action_config.auto_review: "true"
           github_action_config.auto_describe: "true"
           github_action_config.auto_improve: "true"
-          github_action_config.pr_actions: '["opened", "reopened", "ready_for_review"]'
+          github_action_config.pr_actions: '["opened", "reopened", "ready_for_review", "review_requested"]'

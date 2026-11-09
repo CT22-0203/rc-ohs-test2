@@ -3,7 +3,6 @@ package com.rocs.rc.ohs.app.model.consultation;
 import com.rocs.rc.ohs.app.model.enums.recordtype.RecordType;
 import com.rocs.rc.ohs.app.model.person.Person;
 import com.rocs.rc.ohs.app.model.personnel.Personnel;
-
 import java.time.LocalDateTime;
 
 /**
@@ -12,7 +11,7 @@ import java.time.LocalDateTime;
 public class Consultation {
 
     /** The unique ID of the consultation. */
-    private Long id;
+    private String id;
 
     /** The patient associated with the consultation. */
     private Person patient;
@@ -46,7 +45,7 @@ public class Consultation {
      *
      * @return the unique ID of the consultation.
      */
-    public Long getId() {
+    public String getId() {
         return id;
     }
 
@@ -55,7 +54,7 @@ public class Consultation {
      *
      * @param newId the unique ID of the consultation.
      */
-    public void setId(Long newId) {
+    public void setId(String newId) {
         this.id = newId;
     }
 

@@ -10,7 +10,7 @@ import com.rocs.rc.ohs.app.model.personnel.Personnel;
 public class Prescription {
 
     /** The unique ID of the prescription. */
-    private Long id;
+    private String id;
 
     /** The consultation associated with the prescription. */
     private Consultation consultation;
@@ -38,7 +38,7 @@ public class Prescription {
      *
      * @return the unique ID of the prescription.
      */
-    public Long getId() {
+    public String getId() {
         return id;
     }
 
@@ -47,7 +47,7 @@ public class Prescription {
      *
      * @param newId the unique ID of the prescription.
      */
-    public void setId(Long newId) {
+    public void setId(String newId) {
         this.id = newId;
     }
 
