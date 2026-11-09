@@ -87,7 +87,7 @@ jobs:
             echo "+10 empty catch block"
           fi
 
-          SCORE=$((COMMIT_PTS + CODE_PTS + LARGE_PTS + SLOP_PTS))
+          SCORE=$((COMMIT_PTS + CODE_PTS + LARGE_PTS + SLOP_PTS + SHAPE_PTS))
           if [ "$SCORE" -gt 100 ]; then
             SCORE=100
           fi
@@ -115,4 +115,17 @@ jobs:
             fi
           else
             echo "AI score is below the threshold"
+          fi
+          SHAPE_PTS=0
+          if [ "$COMMIT_COUNT" -le 2 ] && [ "$ADDED_COUNT" -ge 150 ]; then
+            SHAPE_PTS=$((SHAPE_PTS + 10))
+            echo "+10 large change in very few commits"
+          fi
+          if [ "$COMMIT_COUNT" -ge 3 ]; then
+            FIRST=$(git log "origin/${BASE_REF}..HEAD" --format=%ct | tail -1)
+            LAST=$(git log "origin/${BASE_REF}..HEAD" --format=%ct | head -1)
+            if [ $((LAST - FIRST)) -lt 900 ]; then
+              SHAPE_PTS=$((SHAPE_PTS + 10))
+              echo "+10 all commits within 15 minutes"
+            fi
           fi
