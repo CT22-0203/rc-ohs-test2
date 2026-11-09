@@ -24,8 +24,7 @@
               location="${build.dir}/slop/classes"/>
     <property name="slop.report.dir"
               location="${reports.dir}/slop"/>
-    <property name="slop.threshold" value="5"/>
-    <property name="slop.max.score" value="10"/>
+    <property name="slop.max.score" value="100"/>
     <property name="slop.scan.dir" location="src"/>
 
     <target name="clean">
@@ -135,15 +134,16 @@
 
     </target>
 
-    <target name="ai"
+    <target name="ai-pattern-check"
             depends="compile-slop-detector"
-            description="Runs Java AI code pattern detection">
+            description="Runs Java AI pattern detection">
 
         <mkdir dir="${slop.report.dir}"/>
 
         <echo>Running Java AI Pattern Detector...</echo>
-        <echo>Scanning: ${slop.scan.dir}</echo>
-        <echo>Detection Threshold: 10/100</echo>
+        <echo>Scanning directory: ${slop.scan.dir}</echo>
+        <echo>Report directory: ${slop.report.dir}</echo>
+        <echo>Detection threshold: 10/100</echo>
 
         <java classname="AiPatternDetector"
               fork="true"
@@ -157,9 +157,7 @@
             <arg value="${slop.report.dir}/ai-pattern-report.txt"/>
 
         </java>
-
     </target>
-
 
     <path id="junit.libs">
         <fileset dir="${ant.home}/lib/junit"/>

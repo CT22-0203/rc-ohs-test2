@@ -50,7 +50,7 @@ jobs:
         run: |
           ant -lib "$HOME/.ant/lib" -noinput \
             -buildfile build.xml \
-            copy-dependencies ai-pattern-check
+            copy-dependencies ai
 
       - name: Upload AI Detection Reports
         if: always()
@@ -138,6 +138,29 @@ jobs:
                 body: report
               });
             }
+
+      - name: Display AI Detection Result
+        if: always()
+        shell: bash
+        run: |
+          echo "========== AI DETECTION DEBUG =========="
+
+          REPORT="build/reports/slop/ai-pattern-report.txt"
+
+          if [ -f "$REPORT" ]; then
+            echo "AI Detection Report Found:"
+            echo ""
+            cat "$REPORT"
+          else
+            echo "AI Detection Report NOT FOUND."
+            echo ""
+            echo "Checking available build files:"
+            find build -type f 2>/dev/null || true
+          fi
+
+          echo ""
+          echo "Detection step outcome: ${{ steps.detection.outcome }}"
+          echo "========================================"  
 
       - name: Fail Pull Request if AI Detection Fails
         if: steps.detection.outcome == 'failure'

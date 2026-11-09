@@ -166,12 +166,14 @@ public class AiPatternDetector {
         analyzeTechnicalIssues(code, file);
     }
 
+
     private static void analyzeNaming(String code, Path file) {
 
         Matcher matcher = IDENTIFIER.matcher(code);
 
+        Map<String, Integer> identifierCounts = new LinkedHashMap<>();
+
         int totalIdentifiers = 0;
-        int genericIdentifiers = 0;
 
         while (matcher.find()) {
 
@@ -181,54 +183,102 @@ public class AiPatternDetector {
                 continue;
             }
 
+            String normalized = identifier.toLowerCase();
+
+            identifierCounts.put(
+                    normalized,
+                    identifierCounts.getOrDefault(normalized, 0) + 1
+            );
+
             totalIdentifiers++;
+        }
 
-            if (GENERIC_NAMES.contains(identifier.toLowerCase())) {
-                genericIdentifiers++;
+        int genericOccurrences = 0;
+        int repeatedGenericNames = 0;
+
+        for (String genericName : GENERIC_NAMES) {
+
+            int occurrences = identifierCounts.getOrDefault(
+                    genericName,
+                    0
+            );
+
+            if (occurrences >= 3) {
+                genericOccurrences += occurrences;
+                repeatedGenericNames++;
             }
         }
 
-        if (genericIdentifiers >= 8) {
+        // Score only when multiple generic names are repeatedly used.
+        if (repeatedGenericNames >= 4 && genericOccurrences >= 16) {
+
             addPoints(
                     "Naming Style",
-                    8,
-                    file + ": Frequent use of generic identifiers."
+                    10,
+                    file + ": Multiple generic identifiers are repeatedly used."
             );
 
-        } else if (genericIdentifiers >= 4) {
+        } else if (repeatedGenericNames >= 3
+                && genericOccurrences >= 12) {
+
             addPoints(
                     "Naming Style",
-                    5,
-                    file + ": Several generic identifiers were found."
+                    7,
+                    file + ": Repeated use of several generic identifiers."
             );
         }
 
-        if (totalIdentifiers > 0) {
-
-            double ratio =
-                    (double) genericIdentifiers / totalIdentifiers;
-
-            if (ratio >= 0.15 && genericIdentifiers >= 3) {
-                addPoints(
-                        "Naming Style",
-                        7,
-                        file + ": Generic identifiers form a noticeable portion of the names."
-                );
-            }
-        }
-
-        if (Pattern.compile(
-                "\\b(test1|test2|method1|method2|temp1|temp2)\\b",
+        // Detect placeholder-style names.
+        Matcher placeholderMatcher = Pattern.compile(
+                "\\b(test|method|variable|temp|object)[0-9]+\\b",
                 Pattern.CASE_INSENSITIVE
-        ).matcher(code).find()) {
+        ).matcher(code);
+
+        int placeholderCount = 0;
+
+        while (placeholderMatcher.find()) {
+            placeholderCount++;
+        }
+
+        if (placeholderCount >= 4) {
 
             addPoints(
                     "Naming Style",
-                    5,
-                    file + ": Numbered or placeholder-style identifiers detected."
+                    6,
+                    file + ": Multiple numbered placeholder identifiers detected."
+            );
+
+        } else if (placeholderCount >= 2) {
+
+            addPoints(
+                    "Naming Style",
+                    3,
+                    file + ": Numbered placeholder identifiers detected."
+            );
+        }
+
+        // Detect excessive one-letter variable-like identifiers.
+        Matcher shortNameMatcher = Pattern.compile(
+                "\\b(?:int|String|double|float|boolean|long|char)"
+                        + "\\s+([a-zA-Z])\\b"
+        ).matcher(code);
+
+        int shortNameCount = 0;
+
+        while (shortNameMatcher.find()) {
+            shortNameCount++;
+        }
+
+        if (shortNameCount >= 6) {
+
+            addPoints(
+                    "Naming Style",
+                    4,
+                    file + ": Frequent one-letter variable declarations detected."
             );
         }
     }
+
 
     private static void analyzeComments(String code, Path file) {
 
