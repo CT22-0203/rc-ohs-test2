@@ -1,5 +1,8 @@
 package com.rocs.rc.ohs.app.model.login;
 
+import com.rocs.rc.ohs.app.model.person.Person;
+import com.rocs.rc.ohs.app.model.role.Role;
+
 import java.util.Date;
 
 /**
@@ -7,8 +10,14 @@ import java.util.Date;
  */
 public class Login {
 
-    /** The unique ID of the login user. */
-    private Long id;
+    /** The unique ID of the Login. */
+    private String id;
+
+    /** The role assigned to the login user. */
+    private Role role;
+
+    /** The person who owns the login account. */
+    private Person person;
 
     /** The username used to log in. */
     private String username;
@@ -19,96 +28,116 @@ public class Login {
     /** The date and time of the user's last login. */
     private Date lastLoginDate;
 
-    /** The role of the user (for example, admin or student). */
-    private String role;
-
     /**
-     * Retrieves the ID of the login user.
+     * Retrieves the unique ID of the Login.
      *
-     * @return The ID of the login user.
+     * @return the unique ID of the Login.
      */
-    public Long getId() {
+
+    public String getId() {
         return id;
     }
 
     /**
-     * Sets the ID of the login user.
+     * Sets the unique ID of the Login.
      *
-     * @param newId The ID of the login user.
+     * @param newId the unique ID of the Login.
      */
-    public void setId(Long newId) {
+
+    public void setId(String newId) {
         this.id = newId;
     }
 
     /**
-     * Retrieves the username of the login user.
+     * Retrieves the role that determines this login's access in the OHS app.
      *
-     * @return The username of the login user.
+     * @return the assigned role
+     */
+    public Role getRole() {
+        return role;
+    }
+
+    /**
+     * Sets the role that determines this login's access.
+     *
+     * @param newRole the role to assign
+     */
+    public void setRole(Role newRole) {
+        this.role = newRole;
+    }
+
+    /**
+     * Retrieves the person this login account belongs to.
+     *
+     * @return the linked person
+     */
+    public Person getPerson() {
+        return person;
+    }
+
+    /**
+     * Sets this login account to the given person.
+     *
+     * @param newPerson the person to link
+     */
+    public void setPerson(Person newPerson) {
+        this.person = newPerson;
+    }
+
+    /**
+     * Retrieves the username used to sign in.
+     *
+     * @return the username
      */
     public String getUsername() {
         return username;
     }
 
     /**
-     * Sets the username of the login user.
+     * Sets the username used to sign in.
      *
-     * @param newUsername The username of the login user.
+     * @param newUsername the new username
      */
     public void setUsername(String newUsername) {
         this.username = newUsername;
     }
 
     /**
-     * Retrieves the password of the login user.
+     * Retrieves the stored password of this login account.
      *
-     * @return The password of the login user.
+     * @return the stored password
      */
     public String getPassword() {
         return password;
     }
 
+
     /**
-     * Sets the password of the login user.
+     * Sets the stored password of this login account.
      *
-     * @param newPassword The password of the login user.
+     * @param newPassword the new password
      */
     public void setPassword(String newPassword) {
         this.password = newPassword;
     }
 
+
     /**
-     * Retrieves the date of the user's last login.
+     * Retrieves the date and time of the account's most recent login.
      *
-     * @return The date of the last login.
+     * @return the last login date and time
      */
     public Date getLastLoginDate() {
         return lastLoginDate;
     }
 
+
     /**
-     * Sets the date of the user's last login.
+     * Sets the date and time of the account's most recent login.
      *
-     * @param newLastLoginDate The date of the last login.
+     * @param newLastLoginDate the latest login date and time
      */
     public void setLastLoginDate(Date newLastLoginDate) {
         this.lastLoginDate = newLastLoginDate;
-    }
-
-    /**
-     * Retrieves the role of the login user.
-     *
-     * @return The role of the login user.
-     */
-    public String getRole() {
-        return role;
-    }
-
-    /**
-     * Sets the role of the login user.
-     *
-     * @param newRole The role of the login user.
-     */
-    public void setRole(String newRole) {
-        this.role = newRole;
     }
 }

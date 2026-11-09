@@ -10,14 +10,24 @@
     <property name="dist.dir" location="${build.dir}/dist"/>
     <property name="src.dir" location="src/main/java"/>
     <property name="doc.dir" location="${build.dir}/doc"/>
-    <property name="ivy.reports.dir"  location="${build.dir}/ivy-reports"/>
+    <property name="ivy.reports.dir" location="${build.dir}/ivy-reports"/>
     <property name="test.src.dir" location="src/test/java"/>
     <property name="test.classes.dir" location="${build.dir}/test-classes"/>
-    <property name="test.reports.dir"  location="${build.dir}/test-reports"/>
+    <property name="test.reports.dir" location="${build.dir}/test-reports"/>
     <property name="lib.dir" location="${build.dir}/lib"/>
     <property name="reports.dir" location="${build.dir}/reports"/>
+    <property name="slop.threshold" value="5"/>
 
-    <target name="clean" >
+    <!-- AI Pattern Detection -->
+    <property name="slop.src.dir" location=".github/tools/slop"/>
+    <property name="slop.classes.dir"
+              location="${build.dir}/slop/classes"/>
+    <property name="slop.report.dir"
+              location="${reports.dir}/slop"/>
+    <property name="slop.max.score" value="100"/>
+    <property name="slop.scan.dir" location="src"/>
+
+    <target name="clean">
         <echo>Cleaning temporary directories...</echo>
         <delete includeemptydirs="true">
             <fileset dir="." includes="${temp.directories}"/>
@@ -29,12 +39,15 @@
         <ivy:report todir="${ivy.reports.dir}" graph="false" xml="false" />
         <ivy:cachepath pathid="compile.path" conf="compile"/>
         <ivy:cachepath pathid="runtime.path" conf="runtime"/>
-        <ivy:cachepath pathid="test.path"    conf="test"/>
-        <ivy:cachepath pathid="pmd.path"     conf="pmd"/>
+        <ivy:cachepath pathid="test.path" conf="test"/>
+        <ivy:cachepath pathid="pmd.path" conf="pmd"/>
+        <ivy:cachepath pathid="checkstyle.path" conf="checkstyle"/>
         <mkdir dir="${classes.dir}"/>
         <mkdir dir="${dist.dir}"/>
         <mkdir dir="${test.classes.dir}"/>
         <mkdir dir="${test.reports.dir}"/>
+        <mkdir dir="${reports.dir}"/>
+        <mkdir dir="${slop.report.dir}"/>
     </target>
 
     <target name="compile" depends="init">
@@ -88,6 +101,60 @@
             </fileset>
         </pmd>
         <echo>PMD report: ${reports.dir}/pmd-report.xml</echo>
+    </target>
+
+    <target name="checkstyle" depends="init" description="Runs Checkstyle">
+        <echo>Running Checkstyle...</echo>
+        <mkdir dir="${reports.dir}"/>
+        <java classname="com.puppycrawl.tools.checkstyle.Main"
+              classpathref="checkstyle.path"
+              fork="true"
+              failonerror="false">
+            <sysproperty key="org.checkstyle.sun.suppressionfilter.config"
+                         value="src/main/resources/checkstyle-suppressions.xml"/>
+            <arg line="-c /sun_checks.xml -f xml -o ${reports.dir}/checkstyle-result.xml ${src.dir}"/>
+        </java>
+        <echo>Checkstyle report: ${reports.dir}/checkstyle-result.xml</echo>
+    </target>
+
+
+    <target name="compile-slop-detector"
+            depends="init"
+            description="Compiles the Java AI pattern detector">
+
+        <mkdir dir="${slop.classes.dir}"/>
+
+        <javac srcdir="${slop.src.dir}"
+               destdir="${slop.classes.dir}"
+               source="11"
+               target="11"
+               encoding="UTF-8"
+               includeantruntime="false"
+               failonerror="true"/>
+
+    </target>
+
+    <target name="ai"
+            depends="compile-slop-detector"
+            description="Runs Java AI Pattern Detection">
+
+        <mkdir dir="${slop.report.dir}"/>
+
+        <echo>Running Java AI Pattern Detector...</echo>
+
+        <java classname="AiPatternDetector"
+              fork="true"
+              failonerror="true">
+
+            <classpath>
+                <pathelement location="${slop.classes.dir}"/>
+            </classpath>
+
+            <arg value="${slop.scan.dir}"/>
+            <arg value="${slop.report.dir}/ai-pattern-report.txt"/>
+
+        </java>
+
     </target>
 
     <path id="junit.libs">
