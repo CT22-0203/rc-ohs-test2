@@ -1,28 +1,118 @@
-name: AI Code Review on PR
+# AI disclosure check. Score 0-100 from commit markers, code markers,
+# large commits and slop signals. Fails at THRESHOLD when FAIL_ON_THRESHOLD is true.
+
+name: ai-disclosure-check
 
 on:
   pull_request:
-    types: [opened, reopened, ready_for_review]
-  issue_comment:
+    branches: [ "master" ]
+
+permissions:
+  contents: read
+
 jobs:
-  pr_agent_job:
-    if: ${{ github.event.sender.type != 'Bot' }}
+  detect-ai:
     runs-on: ubuntu-latest
-    permissions:
-      issues: write
-      pull-requests: write
-      contents: write
-    name: Running PR AI Code Review
     steps:
-      - name: PR Agent action step
-        id: pragent
-        uses: qodo-ai/pr-agent@main
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Calculate AI score
         env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-          github_action_config.model: "gemini/gemini-1.5-flash"
-          GOOGLE_AI_STUDIO.GEMINI_API_KEY: ${{ secrets.GEMINI_API_KEY }}
-          # Example: Enable/disable tools
-          github_action_config.auto_review: "true"
-          github_action_config.auto_describe: "true"
-          github_action_config.auto_improve: "true"
-          github_action_config.pr_actions: '["opened", "reopened", "ready_for_review", "review_requested"]'
+          BASE_REF: ${{ github.base_ref }}
+          THRESHOLD: '20'
+          FAIL_ON_THRESHOLD: 'true'
+          LARGE_COMMIT_LINES: '300'
+          CHECK_COMMENT_RATIO: 'false'
+        run: |
+          COMMIT_PTS=0
+          CODE_PTS=0
+          LARGE_PTS=0
+          SLOP_PTS=0
+
+          COMMIT_COUNT=$(git rev-list --count "origin/${BASE_REF}..HEAD")
+          echo "Scanning ${COMMIT_COUNT} commit(s) against origin/${BASE_REF}"
+
+          COMMIT_PATTERN='co-authored-by:.*\b(claude|copilot|codex|cursor|gemini|chatgpt|openai|anthropic)\b|generated with|aider:|noreply@anthropic\.com|\[bot\]'
+          COMMIT_MATCHES=$(git log "origin/${BASE_REF}..HEAD" --format='%h %an <%ae>%n%B' | grep -Ei "$COMMIT_PATTERN" || true)
+          if [ -n "$COMMIT_MATCHES" ]; then
+            COMMIT_PTS=50
+            echo "+50 AI marker in commit history:"
+            echo "$COMMIT_MATCHES"
+          fi
+
+          ADDED_LINES=$(git diff "origin/${BASE_REF}...HEAD" -U0 -- '*.java' | grep -E '^\+([^+]|$)' | sed 's/^+//' || true)
+          ADDED_COUNT=$(printf '%s\n' "$ADDED_LINES" | grep -c . || true)
+          echo "Added Java lines scanned: ${ADDED_COUNT}"
+
+          CODE_PATTERN='\b(generated|written|created|assisted|made|produced)[ -]+(by|with|using)[ -]+(chatgpt|claude|copilot|gemini|codex|cursor|gpt|ai)\b|\bai[- ]generated\b|as an ai language model'
+          CODE_MATCHES=$(printf '%s\n' "$ADDED_LINES" | grep -Ei "$CODE_PATTERN" || true)
+          if [ -n "$CODE_MATCHES" ]; then
+            CODE_PTS=50
+            echo "+50 AI disclosure in added code:"
+            echo "$CODE_MATCHES"
+          fi
+
+          for c in $(git rev-list "origin/${BASE_REF}..HEAD"); do
+            ADDED=$(git show --numstat --format= "$c" | awk '{s+=$1} END {print s+0}')
+            if [ "$ADDED" -gt "$LARGE_COMMIT_LINES" ]; then
+              LARGE_PTS=10
+              echo "Large commit ${c}: ${ADDED} lines added"
+            fi
+          done
+
+          JAVA_CODE=$(printf '%s\n' "$ADDED_LINES" | grep -Ev '^[[:space:]]*(/\*|\*|$)' || true)
+          CODE_TOTAL=$(printf '%s\n' "$JAVA_CODE" | grep -c . || true)
+          INLINE=$(printf '%s\n' "$JAVA_CODE" | grep -Ec '^[[:space:]]*//' || true)
+          RATIO=0
+          if [ "$CHECK_COMMENT_RATIO" = "true" ] && [ "$CODE_TOTAL" -ge 20 ]; then
+            RATIO=$((INLINE * 100 / CODE_TOTAL))
+            if [ "$RATIO" -ge 25 ]; then
+              SLOP_PTS=$((SLOP_PTS + 20))
+              echo "+20 many inline comments"
+            fi
+          fi
+          echo "Inline comment ratio: ${RATIO}% of ${CODE_TOTAL} line(s)"
+
+          TODO_HITS=$(printf '%s\n' "$ADDED_LINES" | grep -E '\b(TODO|FIXME|HACK|XXX)\b' || true)
+          if [ -n "$TODO_HITS" ]; then
+            SLOP_PTS=$((SLOP_PTS + 10))
+            echo "+10 TODO/FIXME comments"
+          fi
+
+          EMPTY_CATCH=$(printf '%s\n' "$ADDED_LINES" | awk '/catch[[:space:]]*\(/ { c=NR; if ($0 ~ /\{[[:space:]]*\}[[:space:]]*$/) print "empty catch: " $0 } c>0 && NR==c+1 && /^[[:space:]]*\}[[:space:]]*$/ { print "empty catch after line " c }')
+          if [ -n "$EMPTY_CATCH" ]; then
+            SLOP_PTS=$((SLOP_PTS + 10))
+            echo "+10 empty catch block"
+          fi
+
+          SCORE=$((COMMIT_PTS + CODE_PTS + LARGE_PTS + SLOP_PTS))
+          if [ "$SCORE" -gt 100 ]; then
+            SCORE=100
+          fi
+
+          echo "AI score: ${SCORE}/100 (threshold: ${THRESHOLD})"
+          {
+            echo "### AI disclosure check"
+            echo ""
+            echo "Score: **${SCORE}/100**, threshold: **${THRESHOLD}**"
+            echo ""
+            echo "| Signal | Points |"
+            echo "|---|---|"
+            echo "| AI marker in commits | ${COMMIT_PTS} |"
+            echo "| AI disclosure in added code | ${CODE_PTS} |"
+            echo "| Large commit | ${LARGE_PTS} |"
+            echo "| Slop (inline comments, TODO, empty catch) | ${SLOP_PTS} |"
+            echo ""
+            echo "Scanned ${COMMIT_COUNT} commit(s) and ${ADDED_COUNT} added Java line(s)."
+          } >> "$GITHUB_STEP_SUMMARY"
+
+          if [ "$SCORE" -ge "$THRESHOLD" ]; then
+            echo "::warning::AI score ${SCORE} is at or above the threshold ${THRESHOLD}"
+            if [ "$FAIL_ON_THRESHOLD" = "true" ]; then
+              exit 1
+            fi
+          else
+            echo "AI score is below the threshold"
+          fi
