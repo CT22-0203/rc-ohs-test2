@@ -16,6 +16,7 @@
     <property name="test.reports.dir" location="${build.dir}/test-reports"/>
     <property name="lib.dir" location="${build.dir}/lib"/>
     <property name="reports.dir" location="${build.dir}/reports"/>
+    <property name="slop.threshold" value="5"/>
 
     <!-- AI Pattern Detection -->
     <property name="slop.src.dir" location="tools/slop"/>
@@ -124,9 +125,6 @@
     </target>
 
     <target name="compile-slop-detector" depends="init">
-
-        <echo message="Compiling Java AI Pattern Detector..."/>
-
         <mkdir dir="${slop.classes.dir}"/>
 
         <javac srcdir="${slop.src.dir}"
@@ -136,14 +134,11 @@
                encoding="UTF-8"
                includeantruntime="false"
                failonerror="true"/>
-
     </target>
 
     <target name="ai-pattern-check"
             depends="compile-slop-detector"
-            description="Runs Java AI-pattern detection">
-
-        <echo message="Running AI Detection..."/>
+            description="Runs Java AI code pattern detection">
 
         <mkdir dir="${slop.report.dir}"/>
 
@@ -160,9 +155,6 @@
             <arg value="${slop.threshold}"/>
 
         </java>
-
-        <echo message="AI Detection completed."/>
-
     </target>
 
     <target name="jplag-check"

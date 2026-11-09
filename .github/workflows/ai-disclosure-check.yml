@@ -1,3 +1,4 @@
+
 name: AI Detection
 
 on:
@@ -10,6 +11,8 @@ on:
 
 permissions:
   contents: read
+  pull-requests: write
+  issues: write
 
 jobs:
   ai-detection:
@@ -50,8 +53,11 @@ jobs:
             echo "JPlag not installed. Comparison will be skipped."
           fi
 
-      - name: Resolve Ivy dependencies and Run AI Detection
-        run: ant -lib "$HOME/.ant/lib" copy-dependencies ai-pattern-check jplag-check
+      - name: Run AI Detection
+        id: detection
+        continue-on-error: true
+        run: |
+          ant -lib "$HOME/.ant/lib" -noinput -buildfile build.xml copy-dependencies ai-pattern-check jplag-check
 
       - name: Upload AI Detection Reports
         if: always()
@@ -61,3 +67,86 @@ jobs:
           path: build/reports/slop/
           if-no-files-found: warn
           retention-days: 30
+
+      - name: Prepare PR Detection Report
+        if: always() && github.event_name == 'pull_request'
+        run: |
+          REPORT="build/reports/slop/ai-pattern-report.txt"
+          mkdir -p build/reports/slop
+
+          {
+            echo "<!-- AI-DETECTION-REPORT -->"
+            echo "## AI Detection Report"
+            echo ""
+
+            if [ -f "$REPORT" ]; then
+              cat "$REPORT"
+            else
+              echo "**Verdict:** Detection report was not generated."
+              echo ""
+              echo "The Ant detection process may have failed before generating the report."
+              echo "Check the AI Detection workflow logs for the exact error."
+            fi
+
+            echo ""
+            echo "---"
+            echo "Automated analysis only. This report does not prove AI authorship."
+          } > build/reports/slop/pr-comment.md
+
+      - name: Comment AI Detection Report on Pull Request
+        if: always() && github.event_name == 'pull_request'
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const fs = require('fs');
+
+            const reportPath = 'build/reports/slop/pr-comment.md';
+            const marker = '<!-- AI-DETECTION-REPORT -->';
+
+            let report = fs.existsSync(reportPath)
+              ? fs.readFileSync(reportPath, 'utf8')
+              : `${marker}\n## AI Detection Report\n\nReport unavailable. Check the workflow logs.`;
+
+            const maxLength = 60000;
+            if (report.length > maxLength) {
+              report = report.substring(0, maxLength) +
+                '\n\n_Report truncated. See workflow artifacts for the complete report._';
+            }
+
+            const issue_number = context.issue.number;
+
+            const comments = await github.paginate(
+              github.rest.issues.listComments,
+              {
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                issue_number
+              }
+            );
+
+            const existingComment = comments.find(comment =>
+              comment.user.type === 'Bot' &&
+              comment.body.includes(marker)
+            );
+
+            if (existingComment) {
+              await github.rest.issues.updateComment({
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                comment_id: existingComment.id,
+                body: report
+              });
+            } else {
+              await github.rest.issues.createComment({
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                issue_number,
+                body: report
+              });
+            }
+
+      - name: Fail Pull Request if AI Detection Fails
+        if: steps.detection.outcome == 'failure'
+        run: |
+          echo "AI Detection failed or exceeded the configured score threshold."
+          exit 1
