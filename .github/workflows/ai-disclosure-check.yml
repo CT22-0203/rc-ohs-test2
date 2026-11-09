@@ -1,131 +1,65 @@
-# AI disclosure check. Score 0-100 from commit markers, code markers,
-# large commits and slop signals. Fails at THRESHOLD when FAIL_ON_THRESHOLD is true.
-
-name: ai-disclosure-check
+name: AI Detection
 
 on:
   pull_request:
-    branches: [ "main" ]
+    branches:
+      - main
+  push:
+    branches:
+      - main
 
 permissions:
   contents: read
 
 jobs:
-  detect-ai:
+  ai-detection:
+    name: AI Detection
     runs-on: ubuntu-latest
+
+    timeout-minutes: 20
+
     steps:
-      - uses: actions/checkout@v4
+      - name: Checkout repository
+        uses: actions/checkout@v4
         with:
           fetch-depth: 0
 
-      - name: Calculate AI score
-        env:
-          BASE_REF: ${{ github.base_ref }}
-          THRESHOLD: '20'
-          FAIL_ON_THRESHOLD: 'true'
-          LARGE_COMMIT_LINES: '300'
-          CHECK_COMMENT_RATIO: 'false'
+      - name: Set up JDK 21
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '21'
+
+      - name: Install Apache Ant
         run: |
-          COMMIT_PTS=0
-          CODE_PTS=0
-          LARGE_PTS=0
-          SLOP_PTS=0
+          sudo apt-get update
+          sudo apt-get install -y ant
 
-          COMMIT_COUNT=$(git rev-list --count "origin/${BASE_REF}..HEAD")
-          echo "Scanning ${COMMIT_COUNT} commit(s) against origin/${BASE_REF}"
+      - name: Verify Java and Ant
+        run: |
+          java -version
+          javac -version
+          ant -version
 
-          COMMIT_PATTERN='co-authored-by:.*\b(claude|copilot|codex|cursor|gemini|chatgpt|openai|anthropic)\b|generated with|aider:|noreply@anthropic\.com|\[bot\]'
-          COMMIT_MATCHES=$(git log "origin/${BASE_REF}..HEAD" --format='%h %an <%ae>%n%B' | grep -Ei "$COMMIT_PATTERN" || true)
-          if [ -n "$COMMIT_MATCHES" ]; then
-            COMMIT_PTS=50
-            echo "+50 AI marker in commit history:"
-            echo "$COMMIT_MATCHES"
-          fi
-
-          ADDED_LINES=$(git diff "origin/${BASE_REF}...HEAD" -U0 -- '*.java' | grep -E '^\+([^+]|$)' | sed 's/^+//' || true)
-          ADDED_COUNT=$(printf '%s\n' "$ADDED_LINES" | grep -c . || true)
-          echo "Added Java lines scanned: ${ADDED_COUNT}"
-
-          CODE_PATTERN='\b(generated|written|created|assisted|made|produced)[ -]+(by|with|using)[ -]+(chatgpt|claude|copilot|gemini|codex|cursor|gpt|ai)\b|\bai[- ]generated\b|as an ai language model'
-          CODE_MATCHES=$(printf '%s\n' "$ADDED_LINES" | grep -Ei "$CODE_PATTERN" || true)
-          if [ -n "$CODE_MATCHES" ]; then
-            CODE_PTS=50
-            echo "+50 AI disclosure in added code:"
-            echo "$CODE_MATCHES"
-          fi
-
-          for c in $(git rev-list "origin/${BASE_REF}..HEAD"); do
-            ADDED=$(git show --numstat --format= "$c" | awk '{s+=$1} END {print s+0}')
-            if [ "$ADDED" -gt "$LARGE_COMMIT_LINES" ]; then
-              LARGE_PTS=10
-              echo "Large commit ${c}: ${ADDED} lines added"
-            fi
-          done
-
-          JAVA_CODE=$(printf '%s\n' "$ADDED_LINES" | grep -Ev '^[[:space:]]*(/\*|\*|$)' || true)
-          CODE_TOTAL=$(printf '%s\n' "$JAVA_CODE" | grep -c . || true)
-          INLINE=$(printf '%s\n' "$JAVA_CODE" | grep -Ec '^[[:space:]]*//' || true)
-          RATIO=0
-          if [ "$CHECK_COMMENT_RATIO" = "true" ] && [ "$CODE_TOTAL" -ge 20 ]; then
-            RATIO=$((INLINE * 100 / CODE_TOTAL))
-            if [ "$RATIO" -ge 25 ]; then
-              SLOP_PTS=$((SLOP_PTS + 20))
-              echo "+20 many inline comments"
-            fi
-          fi
-          echo "Inline comment ratio: ${RATIO}% of ${CODE_TOTAL} line(s)"
-
-          TODO_HITS=$(printf '%s\n' "$ADDED_LINES" | grep -E '\b(TODO|FIXME|HACK|XXX)\b' || true)
-          if [ -n "$TODO_HITS" ]; then
-            SLOP_PTS=$((SLOP_PTS + 10))
-            echo "+10 TODO/FIXME comments"
-          fi
-
-          EMPTY_CATCH=$(printf '%s\n' "$ADDED_LINES" | awk '/catch[[:space:]]*\(/ { c=NR; if ($0 ~ /\{[[:space:]]*\}[[:space:]]*$/) print "empty catch: " $0 } c>0 && NR==c+1 && /^[[:space:]]*\}[[:space:]]*$/ { print "empty catch after line " c }')
-          if [ -n "$EMPTY_CATCH" ]; then
-            SLOP_PTS=$((SLOP_PTS + 10))
-            echo "+10 empty catch block"
-          fi
-
-          SCORE=$((COMMIT_PTS + CODE_PTS + LARGE_PTS + SLOP_PTS + SHAPE_PTS))
-          if [ "$SCORE" -gt 100 ]; then
-            SCORE=100
-          fi
-
-          echo "AI score: ${SCORE}/100 (threshold: ${THRESHOLD})"
-          {
-            echo "### AI disclosure check"
-            echo ""
-            echo "Score: **${SCORE}/100**, threshold: **${THRESHOLD}**"
-            echo ""
-            echo "| Signal | Points |"
-            echo "|---|---|"
-            echo "| AI marker in commits | ${COMMIT_PTS} |"
-            echo "| AI disclosure in added code | ${CODE_PTS} |"
-            echo "| Large commit | ${LARGE_PTS} |"
-            echo "| Slop (inline comments, TODO, empty catch) | ${SLOP_PTS} |"
-            echo ""
-            echo "Scanned ${COMMIT_COUNT} commit(s) and ${ADDED_COUNT} added Java line(s)."
-          } >> "$GITHUB_STEP_SUMMARY"
-
-          if [ "$SCORE" -ge "$THRESHOLD" ]; then
-            echo "::warning::AI score ${SCORE} is at or above the threshold ${THRESHOLD}"
-            if [ "$FAIL_ON_THRESHOLD" = "true" ]; then
-              exit 1
-            fi
+      - name: Verify JPlag
+        run: |
+          if [ -f tools/jplag/jplag-6.2.0-jar-with-dependencies.jar ]; then
+            java -jar tools/jplag/jplag-6.2.0-jar-with-dependencies.jar --help
           else
-            echo "AI score is below the threshold"
+            echo "JPlag not installed. Comparison will be skipped."
           fi
-          SHAPE_PTS=0
-          if [ "$COMMIT_COUNT" -le 2 ] && [ "$ADDED_COUNT" -ge 150 ]; then
-            SHAPE_PTS=$((SHAPE_PTS + 10))
-            echo "+10 large change in very few commits"
-          fi
-          if [ "$COMMIT_COUNT" -ge 3 ]; then
-            FIRST=$(git log "origin/${BASE_REF}..HEAD" --format=%ct | tail -1)
-            LAST=$(git log "origin/${BASE_REF}..HEAD" --format=%ct | head -1)
-            if [ $((LAST - FIRST)) -lt 900 ]; then
-              SHAPE_PTS=$((SHAPE_PTS + 10))
-              echo "+10 all commits within 15 minutes"
-            fi
-          fi
+
+      - name: Resolve Ivy dependencies
+        run: ant copy-dependencies
+
+      - name: Run AI Detection
+        run: ant ai-pattern-check jplag-check
+
+      - name: Upload AI Detection Reports
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: ai-detection-reports
+          path: build/reports/slop/
+          if-no-files-found: warn
+          retention-days: 30

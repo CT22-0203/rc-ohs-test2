@@ -10,14 +10,30 @@
     <property name="dist.dir" location="${build.dir}/dist"/>
     <property name="src.dir" location="src/main/java"/>
     <property name="doc.dir" location="${build.dir}/doc"/>
-    <property name="ivy.reports.dir"  location="${build.dir}/ivy-reports"/>
+    <property name="ivy.reports.dir" location="${build.dir}/ivy-reports"/>
     <property name="test.src.dir" location="src/test/java"/>
     <property name="test.classes.dir" location="${build.dir}/test-classes"/>
-    <property name="test.reports.dir"  location="${build.dir}/test-reports"/>
+    <property name="test.reports.dir" location="${build.dir}/test-reports"/>
     <property name="lib.dir" location="${build.dir}/lib"/>
     <property name="reports.dir" location="${build.dir}/reports"/>
 
-    <target name="clean" >
+    <!-- AI Pattern Detection -->
+    <property name="slop.src.dir" location="tools/slop"/>
+    <property name="slop.classes.dir" location="${build.dir}/slop/classes"/>
+    <property name="slop.report.dir" location="${reports.dir}/slop"/>
+    <property name="slop.threshold" value="5"/>
+    <property name="slop.max.score" value="10"/>
+
+    <!-- JPlag -->
+    <property name="jplag.version" value="6.2.0"/>
+    <property name="jplag.jar"
+              location="tools/jplag/jplag-6.2.0-jar-with-dependencies.jar"/>
+    <property name="jplag.corpus.dir"
+              location="slop-corpus/submissions"/>
+    <property name="jplag.current.dir"
+              location="${build.dir}/slop/submissions/current"/>
+
+    <target name="clean">
         <echo>Cleaning temporary directories...</echo>
         <delete includeemptydirs="true">
             <fileset dir="." includes="${temp.directories}"/>
@@ -29,13 +45,15 @@
         <ivy:report todir="${ivy.reports.dir}" graph="false" xml="false" />
         <ivy:cachepath pathid="compile.path" conf="compile"/>
         <ivy:cachepath pathid="runtime.path" conf="runtime"/>
-        <ivy:cachepath pathid="test.path"    conf="test"/>
-        <ivy:cachepath pathid="pmd.path"     conf="pmd"/>
+        <ivy:cachepath pathid="test.path" conf="test"/>
+        <ivy:cachepath pathid="pmd.path" conf="pmd"/>
         <ivy:cachepath pathid="checkstyle.path" conf="checkstyle"/>
         <mkdir dir="${classes.dir}"/>
         <mkdir dir="${dist.dir}"/>
         <mkdir dir="${test.classes.dir}"/>
         <mkdir dir="${test.reports.dir}"/>
+        <mkdir dir="${reports.dir}"/>
+        <mkdir dir="${slop.report.dir}"/>
     </target>
 
     <target name="compile" depends="init">
@@ -103,6 +121,103 @@
             <arg line="-c /sun_checks.xml -f xml -o ${reports.dir}/checkstyle-result.xml ${src.dir}"/>
         </java>
         <echo>Checkstyle report: ${reports.dir}/checkstyle-result.xml</echo>
+    </target>
+
+    <target name="compile-slop-detector" depends="init">
+
+        <echo message="Compiling Java AI Pattern Detector..."/>
+
+        <mkdir dir="${slop.classes.dir}"/>
+
+        <javac srcdir="${slop.src.dir}"
+               destdir="${slop.classes.dir}"
+               source="21"
+               target="21"
+               encoding="UTF-8"
+               includeantruntime="false"
+               failonerror="true"/>
+
+    </target>
+
+    <target name="ai-pattern-check"
+            depends="compile-slop-detector"
+            description="Runs Java AI-pattern detection">
+
+        <echo message="Running AI Detection..."/>
+
+        <mkdir dir="${slop.report.dir}"/>
+
+        <java classname="AiPatternDetector"
+              fork="true"
+              failonerror="true">
+
+            <classpath>
+                <pathelement location="${slop.classes.dir}"/>
+            </classpath>
+
+            <arg value="${src.dir}"/>
+            <arg value="${slop.report.dir}/ai-pattern-report.txt"/>
+            <arg value="${slop.threshold}"/>
+
+        </java>
+
+        <echo message="AI Detection completed."/>
+
+    </target>
+
+    <target name="jplag-check"
+            depends="init"
+            description="Runs JPlag source-code similarity analysis">
+
+        <available file="${jplag.jar}"
+                   property="jplag.jar.available"/>
+
+        <available file="${jplag.corpus.dir}"
+                   type="dir"
+                   property="jplag.corpus.available"/>
+
+        <condition property="jplag.ready">
+            <and>
+                <isset property="jplag.jar.available"/>
+                <isset property="jplag.corpus.available"/>
+            </and>
+        </condition>
+
+        <antcall target="run-jplag"/>
+
+    </target>
+
+    <target name="run-jplag" if="jplag.ready">
+
+        <mkdir dir="${jplag.current.dir}"/>
+
+        <copy todir="${jplag.current.dir}">
+            <fileset dir="${src.dir}">
+                <include name="**/*.java"/>
+            </fileset>
+        </copy>
+
+        <java jar="${jplag.jar}"
+              fork="true"
+              failonerror="true">
+
+            <arg value="-M"/>
+            <arg value="RUN"/>
+
+            <arg value="-l"/>
+            <arg value="java"/>
+
+            <arg value="-new"/>
+            <arg value="${build.dir}/slop/submissions"/>
+
+            <arg value="-old"/>
+            <arg value="${jplag.corpus.dir}"/>
+
+            <arg value="-r"/>
+            <arg value="${slop.report.dir}/jplag-report"/>
+
+        </java>
+
     </target>
 
     <path id="junit.libs">
