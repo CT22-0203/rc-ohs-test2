@@ -134,15 +134,13 @@
 
     </target>
 
-    <target name="ai-pattern-check"
-            depends="compile-slop-detector"
-            description="Runs Java AI pattern detection">
+    <target name="ai" depends="compile-slop-detector"
+            description="Runs Java AI Pattern Detection">
 
         <mkdir dir="${slop.report.dir}"/>
 
         <echo>Running Java AI Pattern Detector...</echo>
         <echo>Scanning directory: ${slop.scan.dir}</echo>
-        <echo>Report directory: ${slop.report.dir}</echo>
         <echo>Detection threshold: 10/100</echo>
 
         <java classname="AiPatternDetector"
