@@ -19,7 +19,7 @@
     <property name="slop.threshold" value="5"/>
 
     <!-- AI Pattern Detection -->
-    <property name="slop.src.dir" location="tools/slop"/>
+    <property name="slop.src.dir" location=".github/tools/slop"/>
     <property name="slop.classes.dir"
               location="${build.dir}/slop/classes"/>
     <property name="slop.report.dir"
