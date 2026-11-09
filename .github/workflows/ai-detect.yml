@@ -1,0 +1,169 @@
+name: AI Detection
+
+on:
+  pull_request:
+    branches:
+      - main
+  push:
+    branches:
+      - main
+
+permissions:
+  contents: read
+  pull-requests: write
+  issues: write
+
+jobs:
+  ai-detection:
+    name: AI Detection
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Set up JDK 11
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '11'
+
+      - name: Verify Java and Ant
+        run: |
+          java -version
+          javac -version
+          ant -version
+
+      - name: Install Apache Ivy
+        run: |
+          mkdir -p "$HOME/.ant/lib"
+          wget -O "$HOME/.ant/lib/ivy-2.6.0.jar" \
+            https://repo.maven.apache.org/maven2/org/apache/ivy/ivy/2.6.0/ivy-2.6.0.jar
+          ls -lh "$HOME/.ant/lib/ivy-2.6.0.jar"
+
+      - name: Run AI Detection
+        id: detection
+        continue-on-error: true
+        run: |
+          ant -lib "$HOME/.ant/lib" -noinput \
+            -buildfile build.xml \
+            copy-dependencies ai
+
+      - name: Upload AI Detection Reports
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: ai-detection-reports
+          path: build/reports/slop/
+          if-no-files-found: warn
+          retention-days: 30
+
+      - name: Prepare PR Detection Report
+        if: always() && github.event_name == 'pull_request'
+        shell: bash
+        run: |
+          REPORT="build/reports/slop/ai-pattern-report.txt"
+          mkdir -p build/reports/slop
+
+          {
+            echo "<!-- AI-DETECTION-REPORT -->"
+            echo "## AI Detection Report"
+            echo ""
+
+            if [ -f "$REPORT" ]; then
+              cat "$REPORT"
+            else
+              echo "**Verdict:** Detection report was not generated."
+              echo ""
+              echo "Check the AI Detection workflow logs for the error."
+            fi
+
+            echo ""
+            echo "---"
+            echo "Automated heuristic analysis only. This report does not prove AI authorship."
+          } > build/reports/slop/pr-comment.md
+
+      - name: Comment AI Detection Report on Pull Request
+        if: always() && github.event_name == 'pull_request'
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const fs = require('fs');
+
+            const reportPath = 'build/reports/slop/pr-comment.md';
+            const marker = '<!-- AI-DETECTION-REPORT -->';
+
+            let report = fs.existsSync(reportPath)
+              ? fs.readFileSync(reportPath, 'utf8')
+              : `${marker}\n## AI Detection Report\n\nReport unavailable. Check workflow logs.`;
+
+            const maxLength = 60000;
+
+            if (report.length > maxLength) {
+              report = report.substring(0, maxLength) +
+                '\n\n_Report truncated. See workflow artifacts for the complete report._';
+            }
+
+            const issue_number = context.issue.number;
+
+            const comments = await github.paginate(
+              github.rest.issues.listComments,
+              {
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                issue_number
+              }
+            );
+
+            const existingComment = comments.find(comment =>
+              comment.user.type === 'Bot' &&
+              comment.body.includes(marker)
+            );
+
+            if (existingComment) {
+              await github.rest.issues.updateComment({
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                comment_id: existingComment.id,
+                body: report
+              });
+            } else {
+              await github.rest.issues.createComment({
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                issue_number,
+                body: report
+              });
+            }
+
+      - name: Display AI Detection Result
+        if: always()
+        shell: bash
+        run: |
+          echo "========== AI DETECTION DEBUG =========="
+
+          REPORT="build/reports/slop/ai-pattern-report.txt"
+
+          if [ -f "$REPORT" ]; then
+            echo "AI Detection Report Found:"
+            echo ""
+            cat "$REPORT"
+          else
+            echo "AI Detection Report NOT FOUND."
+            echo ""
+            echo "Checking available build files:"
+            find build -type f 2>/dev/null || true
+          fi
+
+          echo ""
+          echo "Detection step outcome: ${{ steps.detection.outcome }}"
+          echo "========================================"  
+
+      - name: Fail Pull Request if AI Detection Fails
+        if: steps.detection.outcome == 'failure'
+        run: |
+          echo "AI Detection failed or reached the configured threshold."
+          exit 1
