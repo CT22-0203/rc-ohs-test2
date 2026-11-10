@@ -21,9 +21,16 @@ import java.util.Locale;
  */
 public final class ConnectionHelper {
 
+    /** Property key that specifies the database vendor. */
     private static final String VENDOR_KEY = "db.vendor";
+
+    /** Vendor used when {@code db.vendor} is not set or is blank. */
     private static final String DEFAULT_VENDOR = "oracle";
+
+    /** Vendor name for Oracle databases. */
     private static final String ORACLE = "oracle";
+
+    /** Vendor name for MySQL databases. */
     private static final String MYSQL = "mysql";
 
     /**
@@ -97,6 +104,12 @@ public final class ConnectionHelper {
         return vendor;
     }
 
+    /**
+     * Reads an optional property value.
+     *
+     * @param key The property key to look up.
+     * @return The property value, or an empty string if it is not set.
+     */
     private static String valueOrEmpty(String key) {
 
         String value = ApplicationProperties.get(key);

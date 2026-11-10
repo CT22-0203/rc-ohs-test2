@@ -20,7 +20,10 @@ import java.util.Properties;
  */
 public final class ApplicationProperties {
 
+    /** Name of the properties file to load. */
     private static final String FILE_NAME = "application.properties";
+
+    /** Values loaded once from {@code application.properties} when the class is initialized. */
     private static final Properties VALUES = load();
 
     /**
@@ -66,6 +69,17 @@ public final class ApplicationProperties {
         return value.trim();
     }
 
+    /**
+     * Loads {@code application.properties}.
+     *
+     * <p>The classpath is checked first. If the file is not found there, the
+     * copy in the working directory is used instead.</p>
+     *
+     * @return The loaded properties.
+     * @throws IllegalStateException If the file cannot be read, or is not found
+     *                               on the classpath or in the working
+     *                               directory.
+     */
     private static Properties load() {
 
         Properties properties = new Properties();
