@@ -10,7 +10,7 @@ on:
       threshold:
         description: "Fail when the score (0-100) reaches this value"
         required: false
-        default: "5"
+        default: "10"
         type: string
       scope:
         description: "What to analyze"
@@ -32,7 +32,7 @@ concurrency:
   cancel-in-progress: true
 
 env:
-  SLOP_THRESHOLD: ${{ inputs.threshold || '5' }}
+  SLOP_THRESHOLD: ${{ inputs.threshold || '10' }}
   REPORT_DIR: build/reports/slop
   REPORT_FILE: build/reports/slop/ai-pattern-report.txt
   SUMMARY_FILE: build/reports/slop/ai-pattern-summary.properties

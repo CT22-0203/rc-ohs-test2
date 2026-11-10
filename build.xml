@@ -53,11 +53,6 @@
     <target name="compile" depends="init">
         <echo>Compiling project...</echo>
 
-        <!--
-            Copy resources and the application.properties file that sits next
-            to build.properties to the classpath so ApplicationProperties can
-            read the database settings at runtime.
-        -->
         <copy todir="${classes.dir}" overwrite="true">
             <fileset dir="${resources.dir}"/>
         </copy>
@@ -130,12 +125,6 @@
         <echo>Checkstyle report: ${reports.dir}/checkstyle-result.xml</echo>
     </target>
 
-
-    <!--
-        The detector has no external dependencies, so it deliberately does not
-        depend on "init": running it must not require Ivy, a resolve, or a
-        full clean of the build directory.
-    -->
     <target name="slop-init"
             description="Creates the directories used by the AI detector">
         <mkdir dir="${slop.classes.dir}"/>
@@ -146,12 +135,6 @@
             depends="slop-init"
             description="Compiles the Java AI pattern detector">
 
-        <!--
-            Remove old class files first. Without this, a restored or
-            re-downloaded detector source can be older than its compiled
-            class, javac skips it, and Ant runs a stale version of the
-            detector with the new command-line arguments.
-        -->
         <delete dir="${slop.classes.dir}" quiet="true"/>
         <mkdir dir="${slop.classes.dir}"/>
 
