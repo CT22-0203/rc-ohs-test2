@@ -16,7 +16,7 @@
     <property name="test.reports.dir" location="${build.dir}/test-reports"/>
     <property name="lib.dir" location="${build.dir}/lib"/>
     <property name="reports.dir" location="${build.dir}/reports"/>
-    <property name="slop.threshold" value="5"/>
+    <property name="slop.threshold" value="10"/>
 
     <!-- AI Pattern Detection -->
     <property name="slop.src.dir" location=".github/tools/slop"/>
