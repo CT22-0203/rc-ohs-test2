@@ -24,7 +24,6 @@
               location="${build.dir}/slop/classes"/>
     <property name="slop.report.dir"
               location="${reports.dir}/slop"/>
-    <property name="slop.max.score" value="100"/>
     <property name="slop.scan.dir" location="src"/>
 
     <target name="clean">
@@ -118,16 +117,24 @@
     </target>
 
 
-    <target name="compile-slop-detector"
-            depends="init"
-            description="Compiles the Java AI pattern detector">
-
+    <!--
+        The detector has no external dependencies, so it deliberately does not
+        depend on "init": running it must not require Ivy, a resolve, or a
+        full clean of the build directory.
+    -->
+    <target name="slop-init"
+            description="Creates the directories used by the AI detector">
         <mkdir dir="${slop.classes.dir}"/>
+        <mkdir dir="${slop.report.dir}"/>
+    </target>
+
+    <target name="compile-slop-detector"
+            depends="slop-init"
+            description="Compiles the Java AI pattern detector">
 
         <javac srcdir="${slop.src.dir}"
                destdir="${slop.classes.dir}"
-               source="11"
-               target="11"
+               release="11"
                encoding="UTF-8"
                includeantruntime="false"
                failonerror="true"/>
@@ -137,8 +144,6 @@
     <target name="ai"
             depends="compile-slop-detector"
             description="Runs Java AI Pattern Detection">
-
-        <mkdir dir="${slop.report.dir}"/>
 
         <echo>Running Java AI Pattern Detector...</echo>
 
@@ -150,6 +155,8 @@
                 <pathelement location="${slop.classes.dir}"/>
             </classpath>
 
+            <arg value="--threshold"/>
+            <arg value="${slop.threshold}"/>
             <arg value="${slop.scan.dir}"/>
             <arg value="${slop.report.dir}/ai-pattern-report.txt"/>
 
