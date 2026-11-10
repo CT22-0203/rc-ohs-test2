@@ -14,7 +14,6 @@ import java.sql.SQLException;
 /**
  * Implements the data access operations for login accounts.
  */
-@SuppressWarnings("ai-detect") // legacy console logging is intentional
 public class LoginDaoImpl implements LoginDao {
 
     /**

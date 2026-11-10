@@ -9,7 +9,6 @@ import com.rocs.rc.ohs.data.dao.login.impl.LoginDaoImpl;
 /**
  * Implements the login operations of the system.
  */
-@SuppressWarnings("ai-detect")
 public class LoginFacadeImpl implements LoginFacade {
 
     /** The data access object used to retrieve login accounts. */
