@@ -49,6 +49,7 @@ public class AiPatternDetector {
     private static final double MAX_FILE_WEIGHT = 0.60;
 
     private static final int MAX_TABLE_FILES = 20;
+    private static final int MAX_FINDING_FILES = 15;
     private static final int MAX_EVIDENCE_LINES = 40;
     private static final int MAX_LISTED_FILES = 50;
 
@@ -64,7 +65,8 @@ public class AiPatternDetector {
             new CommentAnalyzer(),
             new StructureAnalyzer(),
             new AiTraitsAnalyzer(),
-            new LogicAnalyzer()
+            new LogicAnalyzer(),
+            new DaoPatternAnalyzer()
     );
 
     public static void main(String[] args) {
@@ -142,6 +144,8 @@ public class AiPatternDetector {
                     "no files could be analyzed; check the source paths and permissions"
             );
         }
+
+        CrossFileAnalyzer.analyze(results);
 
         int totalScore = 0;
         int maxFileScore = 0;
@@ -374,6 +378,7 @@ public class AiPatternDetector {
         output.add("");
 
         addFileTable(output, ranked);
+        addFileFindings(output, ranked);
         addCategoryAnalysis(output, ranked);
         addTechnicalNotes(output, ranked);
         addSkippedFiles(output, skipped);
@@ -450,6 +455,91 @@ public class AiPatternDetector {
         }
 
         output.add("");
+    }
+
+    /**
+     * Reviewer-style findings for each scored file: score, confidence band and
+     * every reason behind the points. This makes the report explainable per
+     * file instead of only showing a project-wide number.
+     */
+    private static void addFileFindings(
+            List<String> output,
+            List<AnalysisContext> ranked) {
+
+        output.add("## File-by-File Findings");
+        output.add("");
+
+        int shown = 0;
+
+        for (AnalysisContext result : ranked) {
+
+            if (result.getTotalScore() <= 0) {
+                continue;
+            }
+
+            if (shown == MAX_FINDING_FILES) {
+                output.add("_" + (countScored(ranked) - MAX_FINDING_FILES)
+                        + " more scored file(s) omitted; see the file table._");
+                output.add("");
+                break;
+            }
+
+            output.add("### `" + display(result.getFile()) + "`");
+            output.add("");
+            output.add("- Score: **" + result.getTotalScore() + "/100** - "
+                    + verdict(result.getTotalScore()));
+            output.add("- Strongest category: " + result.getDominantCategory());
+
+            for (String category : Categories.ALL) {
+                for (String reason : result.getEvidence().get(category)) {
+                    output.add("- " + reason);
+                }
+            }
+
+            output.add("");
+            shown++;
+        }
+
+        if (shown == 0) {
+            output.add("No file scored above zero.");
+            output.add("");
+        }
+
+        output.add("_Scores are heuristic evidence, not proof of authorship._");
+        output.add("");
+    }
+
+    private static int countScored(List<AnalysisContext> ranked) {
+
+        int scored = 0;
+
+        for (AnalysisContext result : ranked) {
+            if (result.getTotalScore() > 0) {
+                scored++;
+            }
+        }
+
+        return scored;
+    }
+
+    private static String verdict(int score) {
+
+        if (score >= 20) {
+            return "**very likely AI-generated or AI-assisted "
+                    + "(high confidence)**";
+        }
+
+        if (score >= 10) {
+            return "**likely AI-generated or AI-assisted "
+                    + "(medium confidence)**";
+        }
+
+        if (score >= 5) {
+            return "**possible AI-generated or AI-assisted content "
+                    + "(low-to-medium confidence)**";
+        }
+
+        return "**weak AI-style signals only (low confidence)**";
     }
 
     private static void addCategoryAnalysis(
