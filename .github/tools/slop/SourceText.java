@@ -12,27 +12,9 @@ import java.util.regex.Pattern;
  */
 public final class SourceText {
 
-    /**
-     * Files containing one of these markers are skipped by the detector. The
-     * annotations are the preferred form because they keep the exclusion
-     * visible in the class itself and in code review.
-     */
+    /** Files containing this marker are skipped by the detector. */
     private static final Pattern SUPPRESSION = Pattern.compile(
-            "@generated\\b"
-                    + "|ai-detect\\s*:\\s*ignore"
-                    + "|slop-ignore"
-                    + "|@SuppressWarnings\\s*\\([^)]*[\"'](?:ai-detect|slop)[\"']",
-            Pattern.CASE_INSENSITIVE
-    );
-
-    /**
-     * Annotation-only suppression pattern. Used against source that still has
-     * string literals intact, because
-     * {@link #stripCommentsAndLiterals(String)} blanks the
-     * {@code "ai-detect"} literal and the annotation then never matches.
-     */
-    private static final Pattern ANNOTATION_SUPPRESSION = Pattern.compile(
-            "@SuppressWarnings\\s*\\([^)]*[\"'](?:ai-detect|slop)[\"']",
+            "@generated\\b|ai-detect\\s*:\\s*ignore|slop-ignore",
             Pattern.CASE_INSENSITIVE
     );
 
@@ -174,21 +156,8 @@ public final class SourceText {
      * message) does not silently skip the whole file.</p>
      */
     public static boolean isSuppressed(String source) {
-
-        // Comment-based markers (// ai-detect:ignore, // slop-ignore,
-        // // @generated inside a comment).
-        if (SUPPRESSION.matcher(extractComments(source)).find()) {
-            return true;
-        }
-
-        // Annotation-based markers. Strip only comments so the string literal
-        // "ai-detect" survives for the pattern to match.
-        if (ANNOTATION_SUPPRESSION.matcher(stripComments(source)).find()) {
-            return true;
-        }
-
-        // Fallback for any other marker that survived literal stripping.
-        return SUPPRESSION.matcher(stripCommentsAndLiterals(source)).find();
+        return SUPPRESSION.matcher(extractComments(source)).find()
+                || SUPPRESSION.matcher(stripCommentsAndLiterals(source)).find();
     }
 
     private static int skipLineComment(String source, int start) {
