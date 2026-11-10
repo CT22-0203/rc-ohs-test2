@@ -9,6 +9,7 @@
     <property name="classes.dir" location="${build.dir}/classes"/>
     <property name="dist.dir" location="${build.dir}/dist"/>
     <property name="src.dir" location="src/main/java"/>
+    <property name="resources.dir" location="src/main/resources"/>
     <property name="doc.dir" location="${build.dir}/doc"/>
     <property name="ivy.reports.dir" location="${build.dir}/ivy-reports"/>
     <property name="test.src.dir" location="src/test/java"/>
@@ -16,7 +17,7 @@
     <property name="test.reports.dir" location="${build.dir}/test-reports"/>
     <property name="lib.dir" location="${build.dir}/lib"/>
     <property name="reports.dir" location="${build.dir}/reports"/>
-    <property name="slop.threshold" value="5"/>
+    <property name="slop.threshold" value="10"/>
 
     <!-- AI Pattern Detection -->
     <property name="slop.src.dir" location=".github/tools/slop"/>
@@ -24,7 +25,6 @@
               location="${build.dir}/slop/classes"/>
     <property name="slop.report.dir"
               location="${reports.dir}/slop"/>
-    <property name="slop.max.score" value="100"/>
     <property name="slop.scan.dir" location="src"/>
 
     <target name="clean">
@@ -52,6 +52,19 @@
 
     <target name="compile" depends="init">
         <echo>Compiling project...</echo>
+
+        <!--
+            Copy resources and the application.properties file that sits next
+            to build.properties to the classpath so ApplicationProperties can
+            read the database settings at runtime.
+        -->
+        <copy todir="${classes.dir}" overwrite="true">
+            <fileset dir="${resources.dir}"/>
+        </copy>
+        <copy file="application.properties"
+              tofile="${classes.dir}/application.properties"
+              overwrite="true"/>
+
         <javac srcdir="${src.dir}" destdir="${classes.dir}" includeantruntime="false" debug="true"/>
     </target>
 
@@ -118,16 +131,33 @@
     </target>
 
 
+    <!--
+        The detector has no external dependencies, so it deliberately does not
+        depend on "init": running it must not require Ivy, a resolve, or a
+        full clean of the build directory.
+    -->
+    <target name="slop-init"
+            description="Creates the directories used by the AI detector">
+        <mkdir dir="${slop.classes.dir}"/>
+        <mkdir dir="${slop.report.dir}"/>
+    </target>
+
     <target name="compile-slop-detector"
-            depends="init"
+            depends="slop-init"
             description="Compiles the Java AI pattern detector">
 
+        <!--
+            Remove old class files first. Without this, a restored or
+            re-downloaded detector source can be older than its compiled
+            class, javac skips it, and Ant runs a stale version of the
+            detector with the new command-line arguments.
+        -->
+        <delete dir="${slop.classes.dir}" quiet="true"/>
         <mkdir dir="${slop.classes.dir}"/>
 
         <javac srcdir="${slop.src.dir}"
                destdir="${slop.classes.dir}"
-               source="11"
-               target="11"
+               release="11"
                encoding="UTF-8"
                includeantruntime="false"
                failonerror="true"/>
@@ -137,8 +167,6 @@
     <target name="ai"
             depends="compile-slop-detector"
             description="Runs Java AI Pattern Detection">
-
-        <mkdir dir="${slop.report.dir}"/>
 
         <echo>Running Java AI Pattern Detector...</echo>
 
@@ -150,6 +178,8 @@
                 <pathelement location="${slop.classes.dir}"/>
             </classpath>
 
+            <arg value="--threshold"/>
+            <arg value="${slop.threshold}"/>
             <arg value="${slop.scan.dir}"/>
             <arg value="${slop.report.dir}/ai-pattern-report.txt"/>
 

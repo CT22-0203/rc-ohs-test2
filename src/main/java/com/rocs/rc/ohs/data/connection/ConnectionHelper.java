@@ -1,25 +1,37 @@
 package com.rocs.rc.ohs.data.connection;
 
+import com.rocs.rc.ohs.config.ApplicationProperties;
+
 import java.sql.Connection;
 import java.sql.DriverManager;
+import java.sql.SQLException;
+import java.util.Locale;
 
 /**
  * Provides database connections for the application.
+ *
+ * <p>The database vendor is configured with {@code db.vendor} in
+ * {@code application.properties}, next to {@code build.properties}.
+ * Supported values are {@code oracle} and
+ * {@code mysql}; the matching {@code db.<vendor>.*} block supplies the JDBC
+ * driver, URL and credentials. A deployment can override any value with a
+ * JVM system property, for example:</p>
+ *
+ * <pre>{@code java -Ddb.vendor=mysql -jar build/dist/rc-ohs.jar}</pre>
  */
 public final class ConnectionHelper {
 
-    /** The JDBC URL of the database. */
-    public static final String URL = "jdbc:oracle:thin:@localhost:1521:rogate";
+    /** Property key that specifies the database vendor. */
+    private static final String VENDOR_KEY = "db.vendor";
 
-    /** The JDBC driver class name. */
-    public static final String ORACLE_DRIVER =
-            "oracle.jdbc.driver.OracleDriver";
+    /** Vendor used when {@code db.vendor} is not set or is blank. */
+    private static final String DEFAULT_VENDOR = "oracle";
 
-    /** The database username. */
-    public static final String USERNAME = "rcis";
+    /** Vendor name for Oracle databases. */
+    private static final String ORACLE = "oracle";
 
-    /** The database password. */
-    public static final String PASSWORD = "Changeme0";
+    /** Vendor name for MySQL databases. */
+    private static final String MYSQL = "mysql";
 
     /**
      * Prevents instantiation of this utility class.
@@ -28,17 +40,80 @@ public final class ConnectionHelper {
     }
 
     /**
-     * Opens a connection to the database.
+     * Opens a connection to the configured database.
      *
-     * @return A {@link Connection} to the database.
+     * @return A {@link Connection} to the selected database.
+     * @throws IllegalStateException If the configuration is invalid, the JDBC
+     *                               driver is missing, or the connection
+     *                               cannot be established.
      */
     public static Connection getConnection() {
+
+        String vendor = getVendor();
+        String prefix = "db." + vendor + ".";
+
+        String driver = ApplicationProperties.getRequired(prefix + "driver");
+        String url = ApplicationProperties.getRequired(prefix + "url");
+        String username = valueOrEmpty(prefix + "username");
+        String password = valueOrEmpty(prefix + "password");
+
         try {
-            Class.forName(ORACLE_DRIVER).newInstance();
-            return DriverManager.getConnection(URL, USERNAME, PASSWORD);
-        } catch (Exception ex) {
-            throw new RuntimeException("Error connecting to the database.", ex);
+            Class.forName(driver);
+        } catch (ClassNotFoundException ex) {
+            throw new IllegalStateException(
+                    "JDBC driver not found for vendor \"" + vendor + "\": "
+                            + driver,
+                    ex
+            );
+        }
+
+        try {
+            return DriverManager.getConnection(url, username, password);
+        } catch (SQLException ex) {
+            throw new IllegalStateException(
+                    "Error connecting to the " + vendor + " database.",
+                    ex
+            );
         }
     }
 
+    /**
+     * Returns the database vendor currently selected by the configuration.
+     *
+     * @return Either {@code oracle} or {@code mysql}.
+     * @throws IllegalStateException If the configured vendor is not supported.
+     */
+    public static String getVendor() {
+
+        String vendor = ApplicationProperties.get(VENDOR_KEY);
+
+        if (vendor == null || vendor.trim().isEmpty()) {
+            vendor = DEFAULT_VENDOR;
+        }
+
+        vendor = vendor.trim().toLowerCase(Locale.ROOT);
+
+        if (!ORACLE.equals(vendor) && !MYSQL.equals(vendor)) {
+            throw new IllegalStateException(
+                    "Unsupported " + VENDOR_KEY + " value: \"" + vendor
+                            + "\". Use \"" + ORACLE + "\" or \"" + MYSQL
+                            + "\"."
+            );
+        }
+
+        return vendor;
+    }
+
+    /**
+     * Reads an optional property value.
+     *
+     * @param key The property key to look up.
+     * @return The property value, or an empty string if it is not set.
+     */
+    private static String valueOrEmpty(String key) {
+
+        String value = ApplicationProperties.get(key);
+
+        return value == null ? "" : value;
+    }
 }
