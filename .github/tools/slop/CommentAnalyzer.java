@@ -1,15 +1,6 @@
-import java.util.LinkedHashSet;
-import java.util.Set;
+import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
-/**
- * Detects documentation that reads like generated boilerplate: repeated
- * "this method is used to ..." Javadoc, tutorial-style numbered steps and
- * filler phrases such as "note that" / "here is an example".
- *
- * <p>Only comment text is inspected, and phrase counts are normalized by file
- * size so a long, heavily documented class is not penalized.</p>
- */
 public class CommentAnalyzer implements CodeAnalyzer {
 
     private static final String[] TEMPLATE_PHRASES = {
@@ -17,98 +8,66 @@ public class CommentAnalyzer implements CodeAnalyzer {
             "this test verifies that",
             "this test checks that",
             "the purpose of this method",
-            "this function is responsible for",
-            "this class represents",
-            "this method returns",
-            "this method takes",
-            "is used to represent",
             "initializes the test environment",
             "sets up the test environment",
             "assert that the result",
-            "helper method to",
-            "utility method to",
-            "here is an example",
-            "here's an example",
-            "the following code",
-            "as shown below",
-            "note that this",
-            "please note that",
-            "it is important to note",
-            "in summary"
+            "this function is responsible for"
     };
-
-    private static final Pattern NUMBERED_STEPS = Pattern.compile(
-            "(?m)^\\s*(?://|\\*)\\s*(?:step\\s*)?\\d+\\s*[.):]\\s+\\S",
-            Pattern.CASE_INSENSITIVE
-    );
 
     @Override
     public void analyze(AnalysisContext context) {
 
         String comments = context.getComments().toLowerCase();
-        int lines = context.getLineCount();
 
-        int phraseCount = 0;
-        Set<String> distinctPhrases = new LinkedHashSet<>();
+        int templateCount = 0;
 
         for (String phrase : TEMPLATE_PHRASES) {
-            int occurrences = AnalyzerSupport.count(comments, phrase);
-
-            if (occurrences > 0) {
-                phraseCount += occurrences;
-                distinctPhrases.add(phrase);
-            }
+            templateCount += count(comments, phrase);
         }
 
-        double scaledPhrases = AnalyzerSupport.scaleForSize(phraseCount, lines);
-
-        if (distinctPhrases.size() >= 3 && scaledPhrases >= 6) {
+        if (templateCount >= 5) {
             context.addPoints(
-                    Categories.COMMENTS,
+                    "Comment Style",
                     10,
-                    phraseCount + " template-like documentation phrases across "
-                            + distinctPhrases.size() + " distinct patterns."
+                    "Multiple repeated template-like documentation phrases."
             );
-        } else if (distinctPhrases.size() >= 2 && scaledPhrases >= 3) {
+        } else if (templateCount >= 3) {
             context.addPoints(
-                    Categories.COMMENTS,
-                    5,
-                    phraseCount + " generic documentation phrase(s) detected: "
-                            + summarize(distinctPhrases)
+                    "Comment Style",
+                    6,
+                    "Several generic documentation phrases detected."
             );
         }
 
-        int numberedSteps = AnalyzerSupport.count(NUMBERED_STEPS, comments);
+        Matcher matcher = Pattern.compile(
+                "(?m)^\\s*//\\s*(?:step|note|important|purpose)\\s*:",
+                Pattern.CASE_INSENSITIVE
+        ).matcher(comments);
 
-        if (numberedSteps >= 8 && phraseCount >= 2) {
+        int structuredComments = 0;
+
+        while (matcher.find()) {
+            structuredComments++;
+        }
+
+        if (structuredComments >= 8 && templateCount >= 2) {
             context.addPoints(
-                    Categories.COMMENTS,
+                    "Comment Style",
                     5,
-                    numberedSteps + " numbered step comments combined with "
-                            + "generic descriptions."
+                    "Repeated structured comment templates combined with generic descriptions."
             );
         }
     }
 
-    private String summarize(Set<String> phrases) {
+    private int count(String text, String target) {
+        int total = 0;
+        int index = 0;
 
-        StringBuilder summary = new StringBuilder();
-        int shown = 0;
-
-        for (String phrase : phrases) {
-            if (shown == 3) {
-                summary.append(", ...");
-                break;
-            }
-
-            if (shown > 0) {
-                summary.append(", ");
-            }
-
-            summary.append('"').append(phrase).append('"');
-            shown++;
+        while ((index = text.indexOf(target, index)) != -1) {
+            total++;
+            index += target.length();
         }
 
-        return summary.toString();
+        return total;
     }
 }
