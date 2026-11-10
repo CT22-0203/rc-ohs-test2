@@ -23,7 +23,7 @@ public final class ApplicationProperties {
     /** Name of the properties file to load. */
     private static final String FILE_NAME = "application.properties";
 
-    /** Values loaded once from {@code application.properties} when the class is initialized. */
+    /** Vendor used when {@code db.vendor} is not set or is blank. */
     private static final Properties VALUES = load();
 
     /**
