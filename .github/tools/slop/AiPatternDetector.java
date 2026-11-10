@@ -120,7 +120,8 @@ public class AiPatternDetector {
 
             if (SourceText.isSuppressed(code)) {
                 skipped.add(display(file)
-                        + " (contains @generated or ai-detect:ignore)");
+                        + " (contains @generated, ai-detect:ignore or "
+                        + "@SuppressWarnings(\"ai-detect\"))");
                 continue;
             }
 
@@ -401,8 +402,9 @@ public class AiPatternDetector {
         output.add("- Comments and string literals are stripped before "
                 + "declaration and structure rules run; getters/setters are "
                 + "excluded from duplication checks.");
-        output.add("- To exclude a generated file, add `@generated` or "
-                + "`// ai-detect:ignore` to it.");
+        output.add("- To exclude a file, add `@SuppressWarnings(\"ai-detect\")` "
+                + "to the class, or the `@generated` / `// ai-detect:ignore` "
+                + "markers. Suppressed files are listed as skipped in the report.");
         output.add("");
         output.add("---");
         output.add("*Heuristic analysis only. This report identifies configured "

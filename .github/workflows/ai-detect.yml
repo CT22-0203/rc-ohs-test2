@@ -277,7 +277,7 @@ jobs:
             echo
             echo "---"
             echo "_Heuristic analysis only. This report does not prove AI authorship._"
-            echo "_Add \`@generated\` or \`// ai-detect:ignore\` to a file to exclude it, "
+            echo "_Add \`@SuppressWarnings(\"ai-detect\")\` to a class, or \`@generated\` / \`// ai-detect:ignore\` to a file, to exclude it; "
             echo "or raise the threshold with the workflow dispatch input._"
           } > "$out"
 

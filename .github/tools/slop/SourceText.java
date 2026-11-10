@@ -12,9 +12,16 @@ import java.util.regex.Pattern;
  */
 public final class SourceText {
 
-    /** Files containing this marker are skipped by the detector. */
+    /**
+     * Files containing one of these markers are skipped by the detector. The
+     * annotations are the preferred form because they keep the exclusion
+     * visible in the class itself and in code review.
+     */
     private static final Pattern SUPPRESSION = Pattern.compile(
-            "@generated\\b|ai-detect\\s*:\\s*ignore|slop-ignore",
+            "@generated\\b"
+                    + "|ai-detect\\s*:\\s*ignore"
+                    + "|slop-ignore"
+                    + "|@SuppressWarnings\\s*\\([^)]*[\"'](?:ai-detect|slop)[\"']",
             Pattern.CASE_INSENSITIVE
     );
 
