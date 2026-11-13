@@ -133,24 +133,31 @@ public class NamingAnalyzer implements CodeAnalyzer {
 
         Matcher methodMatcher = VOID_METHOD.matcher(code);
         int longNames = 0;
+        String firstLongName = null;
 
         while (methodMatcher.find()) {
             if (wordParts(methodMatcher.group(1)) >= 5) {
                 longNames++;
+
+                if (firstLongName == null) {
+                    firstLongName = methodMatcher.group(1);
+                }
             }
         }
 
         if (longNames >= 5) {
-            context.addPoints(
+            context.addFinding(
                     Categories.NAMING,
                     4,
-                    longNames + " test methods use long sentence-style names."
+                    longNames + " test methods use long sentence-style names.",
+                    firstLongName
             );
         } else if (longNames >= 3) {
-            context.addPoints(
+            context.addFinding(
                     Categories.NAMING,
                     2,
-                    longNames + " test methods use long sentence-style names."
+                    longNames + " test methods use long sentence-style names.",
+                    firstLongName
             );
         }
     }

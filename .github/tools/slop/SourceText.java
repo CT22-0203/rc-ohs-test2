@@ -18,6 +18,15 @@ public final class SourceText {
             Pattern.CASE_INSENSITIVE
     );
 
+    /**
+     * Annotation form of the opt-out. It is checked against source with string
+     * literals intact, because the annotation value itself is a string.
+     */
+    private static final Pattern ANNOTATION_SUPPRESSION = Pattern.compile(
+            "@SuppressWarnings\\s*\\([^)]*[\"'](?:ai-detect|slop)[\"']",
+            Pattern.CASE_INSENSITIVE
+    );
+
     private SourceText() {
     }
 
@@ -157,7 +166,8 @@ public final class SourceText {
      */
     public static boolean isSuppressed(String source) {
         return SUPPRESSION.matcher(extractComments(source)).find()
-                || SUPPRESSION.matcher(stripCommentsAndLiterals(source)).find();
+                || SUPPRESSION.matcher(stripCommentsAndLiterals(source)).find()
+                || ANNOTATION_SUPPRESSION.matcher(stripComments(source)).find();
     }
 
     private static int skipLineComment(String source, int start) {

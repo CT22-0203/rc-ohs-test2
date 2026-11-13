@@ -65,4 +65,34 @@ final class AnalyzerSupport {
 
         return compact.substring(0, maxLength).trim() + "...";
     }
+
+    /**
+     * Returns the first line that the pattern matches, trimmed and shortened
+     * so it can be shown in the report as a visible code fragment.
+     *
+     * @param source The text to search.
+     * @param pattern The rule's pattern.
+     * @return The matched line, or an empty string when nothing matches.
+     */
+    static String matchedLine(String source, Pattern pattern) {
+
+        if (source == null || pattern == null) {
+            return "";
+        }
+
+        Matcher matcher = pattern.matcher(source);
+
+        if (!matcher.find()) {
+            return "";
+        }
+
+        int start = source.lastIndexOf('\n', matcher.start()) + 1;
+        int end = source.indexOf('\n', matcher.end());
+
+        if (end < 0) {
+            end = source.length();
+        }
+
+        return truncate(source.substring(start, end), 90);
+    }
 }

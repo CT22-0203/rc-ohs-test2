@@ -20,6 +20,7 @@ public class AnalysisContext {
     private final Map<String, Integer> scores = new LinkedHashMap<>();
     private final Map<String, List<String>> evidence = new LinkedHashMap<>();
     private final List<String> technicalNotes = new ArrayList<>();
+    private final List<Finding> findings = new ArrayList<>();
 
     public AnalysisContext(Path file, String code, String comments) {
         this.file = file;
@@ -50,6 +51,23 @@ public class AnalysisContext {
     }
 
     public void addPoints(String category, int points, String reason) {
+        addFinding(category, points, reason, "");
+    }
+
+    /**
+     * Adds points and records the visible fragment that triggered the rule.
+     *
+     * @param category The scoring category.
+     * @param points The rule weight.
+     * @param reason The reviewer-style explanation.
+     * @param fragment The matched code or documentation text, or an empty
+     *                 string when the rule has no single visible fragment.
+     */
+    public void addFinding(
+            String category,
+            int points,
+            String reason,
+            String fragment) {
 
         if (!scores.containsKey(category)) {
             throw new IllegalArgumentException(
@@ -71,6 +89,12 @@ public class AnalysisContext {
 
             if (!reasons.contains(reason)) {
                 reasons.add(reason);
+                findings.add(new Finding(
+                        category,
+                        added,
+                        reason,
+                        fragment
+                ));
             }
         }
     }
@@ -91,6 +115,15 @@ public class AnalysisContext {
 
     public List<String> getTechnicalNotes() {
         return technicalNotes;
+    }
+
+    /**
+     * Returns the explainable findings behind this file's score.
+     *
+     * @return Findings in the order the rules fired.
+     */
+    public List<Finding> getFindings() {
+        return findings;
     }
 
     public int getScore(String category) {

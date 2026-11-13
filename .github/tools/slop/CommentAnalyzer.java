@@ -225,11 +225,12 @@ public class CommentAnalyzer implements CodeAnalyzer {
         double coverage = Math.min(1.0, javadocs / (double) members);
 
         if (coverage >= 0.9) {
-            context.addPoints(
+            context.addFinding(
                     Categories.COMMENTS,
-                    4,
+                    5,
                     "Javadoc on nearly every field and test method ("
-                            + javadocs + " blocks for " + members + " members)."
+                            + javadocs + " blocks for " + members + " members).",
+                    javadocs + " Javadoc blocks for " + members + " members"
             );
         }
     }

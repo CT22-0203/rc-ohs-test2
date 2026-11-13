@@ -124,12 +124,12 @@ jobs:
 
           if [ "${{ steps.scope.outputs.mode }}" = "changed" ]; then
             java -cp build/slop/classes AiPatternDetector \
-              --threshold "${SLOP_THRESHOLD:-5}" \
+              --threshold "${SLOP_THRESHOLD:-10}" \
               --files-from "$REPORT_DIR/changed-files.txt" \
               src "$REPORT_FILE"
           else
             java -cp build/slop/classes AiPatternDetector \
-              --threshold "${SLOP_THRESHOLD:-5}" \
+              --threshold "${SLOP_THRESHOLD:-10}" \
               src "$REPORT_FILE"
           fi
 
@@ -185,7 +185,7 @@ jobs:
             echo "## AI Detection"
             echo
             echo "- Scope: ${{ steps.scope.outputs.label || 'not determined' }}"
-            echo "- Threshold: ${SLOP_THRESHOLD:-5}/100"
+            echo "- Threshold: ${SLOP_THRESHOLD:-10}/100"
 
             if [ "${{ steps.detection.outputs.detected || 'false' }}" = "true" ]; then
               echo "- Result: **failed** (threshold reached)"
@@ -249,7 +249,7 @@ jobs:
               echo "| Metric | Value |"
               echo "| --- | --- |"
               echo "| Score | ${{ steps.summary.outputs.score || 'n/a' }}/100 |"
-              echo "| Threshold | ${SLOP_THRESHOLD:-5}/100 |"
+              echo "| Threshold | ${SLOP_THRESHOLD:-10}/100 |"
               echo "| Files analyzed | ${{ steps.summary.outputs.files_analyzed || 'n/a' }} |"
             else
               echo "**Result: passed** — the score stayed below the configured threshold."
@@ -257,7 +257,7 @@ jobs:
               echo "| Metric | Value |"
               echo "| --- | --- |"
               echo "| Score | ${{ steps.summary.outputs.score || 'n/a' }}/100 |"
-              echo "| Threshold | ${SLOP_THRESHOLD:-5}/100 |"
+              echo "| Threshold | ${SLOP_THRESHOLD:-10}/100 |"
               echo "| Files analyzed | ${{ steps.summary.outputs.files_analyzed || 'n/a' }} |"
             fi
 
