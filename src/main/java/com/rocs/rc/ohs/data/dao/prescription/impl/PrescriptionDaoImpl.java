@@ -26,7 +26,7 @@ public class PrescriptionDaoImpl implements PrescriptionDao {
      *
      * @param prescription The prescription to save. Its ID must be set.
      * @return The saved {@link Prescription}.
-     * @throws IllegalArgumentException If a required value is null.
+     * @throws IllegalArgumentException If a required values is null.
      */
     @Override
     public Prescription add(Prescription prescription)

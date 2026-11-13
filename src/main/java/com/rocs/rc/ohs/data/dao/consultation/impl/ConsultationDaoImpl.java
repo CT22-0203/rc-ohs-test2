@@ -26,7 +26,7 @@ public class ConsultationDaoImpl implements ConsultationDao {
      *
      * @param consultation The consultation to save. Its ID must be set.
      * @return The saved {@link Consultation}.
-     * @throws IllegalArgumentException If a required value is null.
+     * @throws IllegalArgumentException If a required values is null.
      */
     @Override
     public Consultation add(Consultation consultation)

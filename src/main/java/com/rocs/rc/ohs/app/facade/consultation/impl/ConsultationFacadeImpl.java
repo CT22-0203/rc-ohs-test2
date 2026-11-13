@@ -33,8 +33,8 @@ public class ConsultationFacadeImpl implements ConsultationFacade {
     /**
      * Creates a facade that uses the given data access objects.
      *
-     * @param newConsultationDao The DAO of the consultations.
-     * @param newPrescriptionDao The DAO of the prescriptions.
+     * @param newConsultationDao The DAOs of the consultations.
+     * @param newPrescriptionDao The DAOs of the prescriptions.
      */
     public ConsultationFacadeImpl(ConsultationDao newConsultationDao,
                                   PrescriptionDao newPrescriptionDao) {
