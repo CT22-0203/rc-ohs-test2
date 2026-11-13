@@ -31,7 +31,7 @@ import static org.mockito.Mockito.when;
  */
 class ConsultationDaoImplTest {
 
-    /** The ID of Jowan Carl Quirona, a patient in the test data. */
+    /** The ID of Jowan Carl Quironas, a patient in the test data. */
     private static final String JOWAN_ID =
             "f04cac48-889d-4a62-9a2b-a274406ece20";
 

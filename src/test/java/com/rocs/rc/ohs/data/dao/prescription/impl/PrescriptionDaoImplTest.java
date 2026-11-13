@@ -33,7 +33,7 @@ class PrescriptionDaoImplTest {
     private static final String CONSULTATION_ID =
             "a451a504-a3d4-4721-bf8d-a18b8c199356";
 
-    /** The ID given to a new prescription, as the facade would do. */
+    /** The ID given to a new prescriptions, as the facade would do. */
     private static final String NEW_ID =
             "9f4e6c1a-2b7d-4c58-8a31-5d0e7b9c2f14";
 
