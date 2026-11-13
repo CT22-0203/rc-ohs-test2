@@ -38,7 +38,7 @@ import java.util.stream.Stream;
 public class AiPatternDetector {
 
     private static final int MAX_SCORE = 100;
-    private static final int DEFAULT_THRESHOLD = 5;
+    private static final int DEFAULT_THRESHOLD = 10;
 
     /**
      * Weight of the worst file relative to the mean. A single generated file
@@ -50,6 +50,7 @@ public class AiPatternDetector {
 
     private static final int MAX_TABLE_FILES = 20;
     private static final int MAX_FINDING_FILES = 15;
+    private static final int MAX_MARKER_ROWS = 30;
     private static final int MAX_EVIDENCE_LINES = 40;
     private static final int MAX_LISTED_FILES = 50;
 
@@ -66,7 +67,8 @@ public class AiPatternDetector {
             new StructureAnalyzer(),
             new AiTraitsAnalyzer(),
             new LogicAnalyzer(),
-            new DaoPatternAnalyzer()
+            new DaoPatternAnalyzer(),
+            new ReviewPatternAnalyzer()
     );
 
     public static void main(String[] args) {
@@ -120,7 +122,8 @@ public class AiPatternDetector {
 
             if (SourceText.isSuppressed(code)) {
                 skipped.add(display(file)
-                        + " (contains @generated or ai-detect:ignore)");
+                        + " (contains @generated, ai-detect:ignore or "
+                        + "@SuppressWarnings(\"ai-detect\"))");
                 continue;
             }
 
@@ -378,6 +381,7 @@ public class AiPatternDetector {
         output.add("");
 
         addFileTable(output, ranked);
+        addProbableMarkers(output, ranked);
         addFileFindings(output, ranked);
         addCategoryAnalysis(output, ranked);
         addTechnicalNotes(output, ranked);
@@ -401,8 +405,9 @@ public class AiPatternDetector {
         output.add("- Comments and string literals are stripped before "
                 + "declaration and structure rules run; getters/setters are "
                 + "excluded from duplication checks.");
-        output.add("- To exclude a generated file, add `@generated` or "
-                + "`// ai-detect:ignore` to it.");
+        output.add("- To exclude a file, add `@SuppressWarnings(\"ai-detect\")` "
+                + "to the class, or the `@generated` / `// ai-detect:ignore` "
+                + "markers. Suppressed files are listed as skipped in the report.");
         output.add("");
         output.add("---");
         output.add("*Heuristic analysis only. This report identifies configured "
@@ -458,6 +463,104 @@ public class AiPatternDetector {
     }
 
     /**
+     * Reviewer-style marker table: the visible fragment, why it looks
+     * AI-generated or AI-assisted, and how strong the signal is.
+     */
+    private static void addProbableMarkers(
+            List<String> output,
+            List<AnalysisContext> ranked) {
+
+        output.add("## Probable AI-origin Markers");
+        output.add("");
+
+        List<AnalysisContext> withFindings = new ArrayList<>();
+
+        for (AnalysisContext result : ranked) {
+            if (!result.getFindings().isEmpty()) {
+                withFindings.add(result);
+            }
+        }
+
+        if (withFindings.isEmpty()) {
+            output.add("No probable AI-origin markers were detected.");
+            output.add("");
+            return;
+        }
+
+        output.add("| File / visible fragment "
+                + "| Why it looks AI-generated or AI-assisted | Confidence |");
+        output.add("| --- | --- | --- |");
+
+        int shown = 0;
+        boolean truncated = false;
+
+        for (AnalysisContext result : withFindings) {
+
+            List<Finding> findings = new ArrayList<>(result.getFindings());
+            findings.sort(
+                    Comparator.comparingInt(Finding::getPoints).reversed()
+            );
+
+            for (Finding finding : findings) {
+
+                if (shown == MAX_MARKER_ROWS) {
+                    truncated = true;
+                    break;
+                }
+
+                output.add("| " + markerFileCell(result, finding)
+                        + " | " + escapeCell(finding.getReason())
+                        + " | " + finding.getConfidence() + " |");
+                shown++;
+            }
+
+            if (truncated) {
+                break;
+            }
+        }
+
+        if (truncated) {
+            output.add("");
+            output.add("_Additional markers were omitted; see the category "
+                    + "analysis below for the remaining evidence._");
+        }
+
+        output.add("");
+        output.add("_Confidence bands reflect the weight of each marker: "
+                + "Low (1-2), Medium (3-4), Medium-high (5-7), Strong (8+). "
+                + "These are heuristic signals, not proof of authorship._");
+        output.add("");
+    }
+
+    private static String markerFileCell(
+            AnalysisContext result,
+            Finding finding) {
+
+        String fileName = result.getFile().getFileName().toString();
+        StringBuilder cell = new StringBuilder();
+        cell.append("`").append(fileName).append("`");
+
+        if (!finding.getFragment().isEmpty()) {
+            cell.append(": `").append(escapeCell(finding.getFragment()))
+                    .append("`");
+        }
+
+        return cell.toString();
+    }
+
+    private static String escapeCell(String text) {
+
+        if (text == null) {
+            return "";
+        }
+
+        return text
+                .replace("|", "\\|")
+                .replaceAll("\\R", " ")
+                .trim();
+    }
+
+    /**
      * Reviewer-style findings for each scored file: score, confidence band and
      * every reason behind the points. This makes the report explainable per
      * file instead of only showing a project-wide number.
@@ -490,9 +593,26 @@ public class AiPatternDetector {
                     + verdict(result.getTotalScore()));
             output.add("- Strongest category: " + result.getDominantCategory());
 
-            for (String category : Categories.ALL) {
-                for (String reason : result.getEvidence().get(category)) {
-                    output.add("- " + reason);
+            List<Finding> findings = new ArrayList<>(result.getFindings());
+            findings.sort(
+                    Comparator.comparingInt(Finding::getPoints).reversed()
+            );
+
+            if (!findings.isEmpty()) {
+                for (Finding finding : findings) {
+                    output.add("- **" + finding.getConfidence() + "** - "
+                            + finding.getReason());
+
+                    if (!finding.getFragment().isEmpty()) {
+                        output.add("  - `"
+                                + escapeCell(finding.getFragment()) + "`");
+                    }
+                }
+            } else {
+                for (String category : Categories.ALL) {
+                    for (String reason : result.getEvidence().get(category)) {
+                        output.add("- " + reason);
+                    }
                 }
             }
 

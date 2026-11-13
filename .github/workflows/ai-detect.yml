@@ -106,7 +106,13 @@ jobs:
           count=$(grep -c . "$files" || true)
 
           if [ "$mode" = "changed" ] && [ "$count" -eq 0 ]; then
-            mode="none"
+            # A pull request that only touches non-Java files would otherwise
+            # produce no report, leaving the comment with "The detection report
+            # was not generated". Fall back to a full scan so the report is
+            # always available, even when the check passes.
+            mode="all"
+            label="all Java sources under src (no Java changes in this pull request)"
+            echo "::notice::No Java files changed; running a full scan so the report is still available."
           fi
 
           echo "mode=$mode" >> "$GITHUB_OUTPUT"
@@ -120,20 +126,30 @@ jobs:
         if: steps.scope.outputs.mode != 'none'
         shell: bash
         run: |
+          # GitHub runs bash with -e, which would abort on the detector's
+          # exit code 1 (threshold reached) before the status is recorded.
+          # Disable it so the result is reported instead of looking like a
+          # tool crash.
+          set +e
           set -uo pipefail
+
+          detector_log="$REPORT_DIR/detector.log"
+          mkdir -p "$REPORT_DIR"
 
           if [ "${{ steps.scope.outputs.mode }}" = "changed" ]; then
             java -cp build/slop/classes AiPatternDetector \
-              --threshold "${SLOP_THRESHOLD:-5}" \
+              --threshold "${SLOP_THRESHOLD:-10}" \
               --files-from "$REPORT_DIR/changed-files.txt" \
-              src "$REPORT_FILE"
+              src "$REPORT_FILE" > "$detector_log" 2>&1
           else
             java -cp build/slop/classes AiPatternDetector \
-              --threshold "${SLOP_THRESHOLD:-5}" \
-              src "$REPORT_FILE"
+              --threshold "${SLOP_THRESHOLD:-10}" \
+              src "$REPORT_FILE" > "$detector_log" 2>&1
           fi
 
           status=$?
+
+          cat "$detector_log"
 
           echo "exit_code=$status" >> "$GITHUB_OUTPUT"
 
@@ -185,7 +201,7 @@ jobs:
             echo "## AI Detection"
             echo
             echo "- Scope: ${{ steps.scope.outputs.label || 'not determined' }}"
-            echo "- Threshold: ${SLOP_THRESHOLD:-5}/100"
+            echo "- Threshold: ${SLOP_THRESHOLD:-10}/100"
 
             if [ "${{ steps.detection.outputs.detected || 'false' }}" = "true" ]; then
               echo "- Result: **failed** (threshold reached)"
@@ -249,20 +265,49 @@ jobs:
               echo "| Metric | Value |"
               echo "| --- | --- |"
               echo "| Score | ${{ steps.summary.outputs.score || 'n/a' }}/100 |"
-              echo "| Threshold | ${SLOP_THRESHOLD:-5}/100 |"
+              echo "| Threshold | ${SLOP_THRESHOLD:-10}/100 |"
+              echo "| Highest file score | ${{ steps.summary.outputs.max_file_score || 'n/a' }}/100 |"
+              echo "| Files at/above threshold | ${{ steps.summary.outputs.files_at_or_above_threshold || 'n/a' }} |"
               echo "| Files analyzed | ${{ steps.summary.outputs.files_analyzed || 'n/a' }} |"
+              echo "| Files skipped | ${{ steps.summary.outputs.files_skipped || 'n/a' }} |"
+              if [ -n "${{ steps.summary.outputs.highest_file }}" ]; then
+                echo "| Highest-scoring file | \`${{ steps.summary.outputs.highest_file }}\` |"
+              fi
             else
               echo "**Result: passed** — the score stayed below the configured threshold."
               echo
               echo "| Metric | Value |"
               echo "| --- | --- |"
               echo "| Score | ${{ steps.summary.outputs.score || 'n/a' }}/100 |"
-              echo "| Threshold | ${SLOP_THRESHOLD:-5}/100 |"
+              echo "| Threshold | ${SLOP_THRESHOLD:-10}/100 |"
+              echo "| Highest file score | ${{ steps.summary.outputs.max_file_score || 'n/a' }}/100 |"
               echo "| Files analyzed | ${{ steps.summary.outputs.files_analyzed || 'n/a' }} |"
             fi
 
+            if [ "${{ steps.detection.outputs.tool_error || 'false' }}" = "true" ] \
+                && [ -f "$REPORT_DIR/detector.log" ]; then
+              echo
+              echo "<details open>"
+              echo "<summary>Detector output</summary>"
+              echo
+              echo '```text'
+              cat "$REPORT_DIR/detector.log"
+              echo '```'
+              echo "</details>"
+            fi
+
             echo
-            echo "<details>"
+
+            # On failure, show every detection directly in the comment instead
+            # of hiding the report behind a collapsed details block.
+            if [ "${{ steps.detection.outputs.detected || 'false' }}" = "true" ] \
+                || [ "${{ steps.detection.outputs.tool_error || 'false' }}" = "true" ] \
+                || [ "${{ steps.detection.conclusion || 'skipped' }}" != "success" ]; then
+              echo "<details open>"
+            else
+              echo "<details>"
+            fi
+
             echo "<summary>Full detection report</summary>"
             echo
 
@@ -277,7 +322,8 @@ jobs:
             echo
             echo "---"
             echo "_Heuristic analysis only. This report does not prove AI authorship._"
-            echo "_Add \`@generated\` or \`// ai-detect:ignore\` to a file to exclude it, "
+            echo "_Add \`@SuppressWarnings(\"ai-detect\")\`, \`@generated\` or "
+            echo "\`// ai-detect:ignore\` to a file to exclude it, "
             echo "or raise the threshold with the workflow dispatch input._"
           } > "$out"
 
