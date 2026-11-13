@@ -32,19 +32,22 @@ public class LogicAnalyzer implements CodeAnalyzer {
             Pattern.CASE_INSENSITIVE
     );
 
+    // =========================================================================
+    // NAKA-COMMENT OUT: Console printing detection
+    // Inalis muna natin ito para hindi ma-flag ang System.out.println at
+    // printStackTrace sa catch blocks.
+    // =========================================================================
+    /*
     private static final Pattern PRINT_STACK_TRACE = Pattern.compile(
             "\\.printStackTrace\\s*\\("
     );
 
-    /**
-     * A catch block whose only reaction is printing to the console. Generated
-     * DAO/service code very often replaces real error handling with
-     * {@code System.out.println(e.getMessage())}.
-     */
     private static final Pattern CATCH_PRINTS_TO_CONSOLE = Pattern.compile(
             "catch\\s*\\([^)]*\\)\\s*\\{[^}]*System\\.(?:out|err)\\."
                     + "(?:print|printf|println)\\s*\\("
     );
+    */
+    // =========================================================================
 
     @Override
     public void analyze(AnalysisContext context) {
@@ -112,6 +115,10 @@ public class LogicAnalyzer implements CodeAnalyzer {
             );
         }
 
+        // =====================================================================
+        // NAKA-COMMENT OUT: Logic para sa console printing
+        // =====================================================================
+        /*
         if (PRINT_STACK_TRACE.matcher(structure).find()) {
             context.addTechnicalNote(
                     "Consider using a logging framework instead of printStackTrace()."
@@ -136,5 +143,7 @@ public class LogicAnalyzer implements CodeAnalyzer {
                     "Consider using a logging framework for exception reporting."
             );
         }
+        */
+        // =====================================================================
     }
 }

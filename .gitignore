@@ -1,3 +1,6 @@
 /.idea/
-/rc-ohs-test2.iml
+/rc-ohs.iml
 /build/
+/out/
+/target/
+*.iml
