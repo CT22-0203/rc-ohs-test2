@@ -68,7 +68,7 @@ public final class AppConfig {
     /**
      * Returns the value for a key, or a default value if not found.
      *
-     * @param key          Key to search for in the properties.
+     * @param key         Key to search for in the properties.
      * @param defaultValue The fallback value.
      * @return The property value, or the default value.
      */

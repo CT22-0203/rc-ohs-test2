@@ -214,6 +214,7 @@ insert into personnel (id, person_id, employee_id) values
 ('abef97b3-5a0a-400d-b70e-38c6ce10a11a', '43e90036-fb5e-4c31-8950-0b2951ad9d71', 'EMP-003'),
 ('033a2786-23b9-46ae-96fc-5bf81115669b', 'ba6c33c3-0833-4e25-b93e-b000e0027416', 'EMP-004'),
 ('7c2f912e-7bb2-4aea-b0f1-3c5b844c4015', '5a4b605d-21d2-42c2-a93e-86899fcc0c3f', 'EMP-005'),
+('b74de6ca-b83f-4c55-b896-9f517bbeac2f', 'b74de6ca-b83f-4c55-b896-9f517bbeac2f', 'EMP-006'),
 ('583ce499-4a13-40b2-86cc-1134e07fa7c8', '6e00132d-76c0-4c86-82c2-53ba0211aaf0', null);
 
 insert into personnel_position (personnel_id, position_id, department_id) values
