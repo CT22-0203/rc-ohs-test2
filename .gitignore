@@ -2,4 +2,5 @@
 /rc-ohs.iml
 /build/
 /out/
+/target/
 *.iml
